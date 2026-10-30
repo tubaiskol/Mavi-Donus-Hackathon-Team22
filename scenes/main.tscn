@@ -2,6 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://dal13eh2yd3x8" path="res://scenes/boat.tscn" id="1_o5qli"]
 [ext_resource type="Script" uid="uid://ug3bjlbeaad5" path="res://scripts/spawner.gd" id="2_0wfyh"]
+[ext_resource type="Script" uid="uid://cqjj1xadja0lq" path="res://scripts/hud.gd" id="3_sugp2"]
 
 [node name="Main" type="Node2D" unique_id=697647994]
 
@@ -19,3 +20,23 @@ script = ExtResource("2_0wfyh")
 [node name="Timer" type="Timer" parent="Spawner" unique_id=1140275100]
 wait_time = 1.2
 autostart = true
+
+[node name="HUD" type="CanvasLayer" parent="." unique_id=1209394026]
+script = ExtResource("3_sugp2")
+
+[node name="StatsBox" type="VBoxContainer" parent="HUD" unique_id=719956904]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 56.0
+offset_bottom = 56.0
+
+[node name="PollutionLabel" type="Label" parent="HUD/StatsBox" unique_id=1532999599]
+layout_mode = 2
+
+[node name="PollutionBar" type="ProgressBar" parent="HUD/StatsBox" unique_id=1212725112]
+custom_minimum_size = Vector2(280, 24)
+layout_mode = 2
+show_percentage = false
+
+[node name="CoinsLabel" type="Label" parent="HUD/StatsBox" unique_id=1668178622]
+layout_mode = 2
