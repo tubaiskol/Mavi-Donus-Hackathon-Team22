@@ -20,7 +20,7 @@ position = Vector2(400, 300)
 script = ExtResource("2_0wfyh")
 
 [node name="Timer" type="Timer" parent="Spawner" unique_id=1140275100]
-wait_time = 1.2
+wait_time = 2.5
 autostart = true
 
 [node name="HUD" type="CanvasLayer" parent="." unique_id=1209394026]
@@ -41,4 +41,7 @@ layout_mode = 2
 show_percentage = false
 
 [node name="CoinsLabel" type="Label" parent="HUD/StatsBox" unique_id=1668178622]
+layout_mode = 2
+
+[node name="TimeLabel" type="Label" parent="HUD/StatsBox" unique_id=1825778170]
 layout_mode = 2
