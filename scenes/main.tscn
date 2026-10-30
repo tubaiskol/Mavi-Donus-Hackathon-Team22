@@ -42,6 +42,9 @@ layout_mode = 2
 [node name="TimeLabel" type="Label" parent="HUD/StatsBox" unique_id=1825778170]
 layout_mode = 2
 
+[node name="TrashLabel" type="Label" parent="HUD/StatsBox" unique_id=1410808958]
+layout_mode = 2
+
 [node name="ShopPanel" type="CanvasLayer" parent="." unique_id=1414329041]
 process_mode = 3
 layer = 2
