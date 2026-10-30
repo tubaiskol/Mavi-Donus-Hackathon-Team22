@@ -31,18 +31,21 @@ func _ready() -> void:
 
 
 func _open_shop() -> void:
-	if GameState.current_round != 1 or GameState.game_over:
+	if GameState.game_over or GameState.current_round >= 5:
 		return
 
 	_refresh(GameState.coins)
+
+	continue_button.disabled = false
+	continue_button.text = "%d. Seviyeye Başla" % (
+		GameState.current_round + 1
+	)
+
 	show()
 
-	# Panelin yerleşiminin tamamlanmasını bekle.
 	await get_tree().process_frame
 
 	var panel: PanelContainer = $PanelContainer
-
-	# Önceki merkez çapalarını ve konum ofsetlerini temizle.
 	panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
 
 	var screen_center := get_viewport().get_visible_rect().get_center()

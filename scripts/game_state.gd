@@ -6,8 +6,8 @@ signal round_ended
 signal game_won
 signal game_lost
 
-var pollution := 60.0
-var emission_per_sec := 1.5
+var pollution := 40.0
+var emission_per_sec := 0.25
 var has_solar := false
 
 var trash_value := -4.0
@@ -48,7 +48,7 @@ func add_coins(amount: int) -> void:
 
 
 func reset() -> void:
-	pollution = 60.0
+	pollution = 40.0
 	has_solar = false
 	coins = 0
 	boat_speed = 220.0
