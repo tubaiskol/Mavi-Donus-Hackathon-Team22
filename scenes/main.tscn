@@ -1,10 +1,12 @@
 [gd_scene format=3 uid="uid://dkinyhihgksox"]
 
+[ext_resource type="Script" uid="uid://vj6n3l85yu0u" path="res://scripts/game.gd" id="1_jyhfs"]
 [ext_resource type="PackedScene" uid="uid://dal13eh2yd3x8" path="res://scenes/boat.tscn" id="1_o5qli"]
 [ext_resource type="Script" uid="uid://ug3bjlbeaad5" path="res://scripts/spawner.gd" id="2_0wfyh"]
 [ext_resource type="Script" uid="uid://cqjj1xadja0lq" path="res://scripts/hud.gd" id="3_sugp2"]
 
 [node name="Main" type="Node2D" unique_id=697647994]
+script = ExtResource("1_jyhfs")
 
 [node name="Label" type="Label" parent="." unique_id=1705647243]
 offset_right = 70.0
