@@ -45,3 +45,42 @@ layout_mode = 2
 
 [node name="TimeLabel" type="Label" parent="HUD/StatsBox" unique_id=1825778170]
 layout_mode = 2
+
+[node name="ShopPanel" type="CanvasLayer" parent="." unique_id=1414329041]
+process_mode = 3
+layer = 2
+visible = false
+
+[node name="PanelContainer" type="PanelContainer" parent="ShopPanel" unique_id=1883819500]
+custom_minimum_size = Vector2(400, 240)
+offset_left = 320.0
+offset_top = 160.0
+offset_right = 360.0
+offset_bottom = 200.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ShopPanel/PanelContainer" unique_id=695211075]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="ShopPanel/PanelContainer/VBoxContainer" unique_id=111898442]
+layout_mode = 2
+text = "Mağaza"
+
+[node name="CoinsLabel" type="Label" parent="ShopPanel/PanelContainer/VBoxContainer" unique_id=1345876108]
+layout_mode = 2
+text = "Coin: 0"
+
+[node name="SpeedButton" type="Button" parent="ShopPanel/PanelContainer/VBoxContainer" unique_id=1816568770]
+layout_mode = 2
+text = "Hızlı Motor — 10 coin"
+
+[node name="NetButton" type="Button" parent="ShopPanel/PanelContainer/VBoxContainer" unique_id=1029789368]
+layout_mode = 2
+text = "Geniş Ağ — 8 coin"
+
+[node name="SolarButton" type="Button" parent="ShopPanel/PanelContainer/VBoxContainer" unique_id=827641630]
+layout_mode = 2
+text = "Güneş Paneli — 15 coin"
+
+[node name="ContinueButton" type="Button" parent="ShopPanel/PanelContainer/VBoxContainer" unique_id=1770173260]
+layout_mode = 2
+text = "2. Tura Başla"
