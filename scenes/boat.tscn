@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://dal13eh2yd3x8"]
+
+[ext_resource type="Texture2D" uid="uid://r80761wkkjmw" path="res://icon.svg" id="1_0063d"]
+[ext_resource type="Script" uid="uid://b87t225yf37d0" path="res://scripts/boat.gd" id="1_qyrje"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ypjg4"]
+radius = 16.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_boj5w"]
+radius = 40.0
+
+[node name="Boat" type="CharacterBody2D" unique_id=2030048938]
+script = ExtResource("1_qyrje")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=394779275]
+texture = ExtResource("1_0063d")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1397960002]
+shape = SubResource("CircleShape2D_ypjg4")
+
+[node name="PickupArea" type="Area2D" parent="." unique_id=1158865846]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PickupArea" unique_id=1672821819]
+shape = SubResource("CircleShape2D_boj5w")
