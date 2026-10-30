@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://dkinyhihgksox"]
+
+[node name="Main" type="Node2D" unique_id=697647994]
+
+[node name="Label" type="Label" parent="." unique_id=1705647243]
+offset_right = 70.0
+offset_bottom = 23.0
+text = "Merhaba"
