@@ -4,14 +4,10 @@
 [ext_resource type="PackedScene" uid="uid://dal13eh2yd3x8" path="res://scenes/boat.tscn" id="1_o5qli"]
 [ext_resource type="Script" uid="uid://ug3bjlbeaad5" path="res://scripts/spawner.gd" id="2_0wfyh"]
 [ext_resource type="Script" uid="uid://cqjj1xadja0lq" path="res://scripts/hud.gd" id="3_sugp2"]
+[ext_resource type="Script" uid="uid://b41fdxguha28w" path="res://scripts/shop.gd" id="5_tbgi4"]
 
 [node name="Main" type="Node2D" unique_id=697647994]
 script = ExtResource("1_jyhfs")
-
-[node name="Label" type="Label" parent="." unique_id=1705647243]
-offset_right = 70.0
-offset_bottom = 23.0
-text = "Merhaba"
 
 [node name="Boat" parent="." unique_id=2030048938 instance=ExtResource("1_o5qli")]
 position = Vector2(400, 300)
@@ -50,6 +46,7 @@ layout_mode = 2
 process_mode = 3
 layer = 2
 visible = false
+script = ExtResource("5_tbgi4")
 
 [node name="PanelContainer" type="PanelContainer" parent="ShopPanel" unique_id=1883819500]
 custom_minimum_size = Vector2(400, 240)
