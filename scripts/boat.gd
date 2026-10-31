@@ -81,12 +81,20 @@ func _physics_process(delta: float) -> void:
 		screen.end - EDGE_MARGIN
 	)
 
-	if velocity.length() > 10.0:
-		sprite.rotation = lerp_angle(
-			sprite.rotation,
-			velocity.angle(),
-			10.0 * delta
-		)
+	# Teknenin ters dönmesini engelle:
+	# Sağa ve sola giderken görseli yatay çevir (flip_h), asla baş aşağı dönmesin!
+	if absf(velocity.x) > 12.0:
+		sprite.flip_h = (velocity.x < 0.0)
+
+	# Su üzerinde hafif meyillenme (en fazla ±10-12 derece)
+	var target_tilt := 0.0
+	if absf(velocity.x) > 8.0:
+		var dir := -1.0 if sprite.flip_h else 1.0
+		target_tilt = clampf(velocity.y / GameState.boat_speed, -1.0, 1.0) * 0.18 * dir
+	else:
+		target_tilt = clampf(velocity.y / GameState.boat_speed, -1.0, 1.0) * 0.10
+
+	sprite.rotation = lerp_angle(sprite.rotation, target_tilt, 8.0 * delta)
 
 	var is_moving := velocity.length() > 20.0
 
