@@ -90,8 +90,7 @@ func _start_next_level() -> void:
 	continue_button.disabled = true
 	shop_panel.hide()
 
-	# Kirlilik, coin ve yükseltmeler korunur.
-	GameState.current_round += 1
+	GameState.start_next_level()
 	spawner.start_level()
 
 	time_left = GameState.round_time

@@ -51,7 +51,18 @@ func _apply_random_texture() -> void:
 	if trash_textures.is_empty():
 		return
 
-	var chosen_texture := trash_textures.pick_random() as Texture2D
+	var chosen_texture: Texture2D = null
+
+	# Seviye 3 ve sonrasında denizde daha fazla toksik atık belirir.
+	if GameState.current_round >= 3 and randf() < 0.35:
+		for tex in trash_textures:
+			if "toxic" in tex.resource_path.to_lower():
+				chosen_texture = tex
+				break
+
+	if chosen_texture == null:
+		chosen_texture = trash_textures.pick_random() as Texture2D
+
 	if chosen_texture == null:
 		return
 
