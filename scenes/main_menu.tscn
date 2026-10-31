@@ -3,6 +3,8 @@
 [ext_resource type="Script" uid="uid://blf2ok3kgwvbd" path="res://scripts/main_menu.gd" id="1_l6cm7"]
 [ext_resource type="Texture2D" uid="uid://bl7elj8j6iy4f" path="res://assets/menu_background.jpg" id="2_ekxnf"]
 [ext_resource type="Texture2D" uid="uid://dfoljtj4gt2l1" path="res://assets/title_logo.png" id="3_bqqt6"]
+[ext_resource type="Texture2D" path="res://assets/bubble_button.png" id="4_wu84c"]
+[ext_resource type="FontFile" uid="uid://d1b76g6rr4t4s" path="res://assets/menu_font.ttf" id="5_8ln24"]
 
 [node name="MainMenu" type="Control" unique_id=1677856287]
 layout_mode = 3
@@ -39,6 +41,7 @@ layout_mode = 2
 
 [node name="LogoMargin" type="MarginContainer" parent="CenterContainer/MenuBox" unique_id=1622170138]
 layout_mode = 2
+theme_override_constants/margin_bottom = 30
 
 [node name="TitleLogo" type="TextureRect" parent="CenterContainer/MenuBox/LogoMargin" unique_id=756187336]
 custom_minimum_size = Vector2(420, 210)
@@ -58,7 +61,87 @@ Temiz bir gelecek için kirliliğin kaynağını durdur."
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="StartButton" type="Button" parent="CenterContainer/MenuBox" unique_id=1103074080]
-custom_minimum_size = Vector2(0, 44)
+[node name="ButtonsBox" type="Control" parent="CenterContainer/MenuBox" unique_id=1248310823]
+custom_minimum_size = Vector2(420, 260)
 layout_mode = 2
-text = "Denize Açıl"
+
+[node name="StartButton" type="TextureButton" parent="CenterContainer/MenuBox/ButtonsBox" unique_id=1695040229]
+layout_mode = 0
+offset_left = 120.0
+offset_right = 540.0
+offset_bottom = 44.0
+stretch_mode = 5
+
+[node name="BubbleText" type="Label" parent="CenterContainer/MenuBox/ButtonsBox/StartButton" unique_id=320719340]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 125.0
+offset_right = -959.0
+offset_bottom = -1084.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.972549, 0.85882354, 1)
+theme_override_colors/font_outline_color = Color(0.08235294, 0.3019608, 0.40784314, 1)
+theme_override_constants/outline_size = 2
+theme_override_fonts/font = ExtResource("5_8ln24")
+theme_override_font_sizes/font_size = 26
+text = "Denize
+Açıl"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HelpButton" type="TextureButton" parent="CenterContainer/MenuBox/ButtonsBox" unique_id=1637324623]
+layout_mode = 0
+offset_top = 140.0
+offset_right = 1254.0
+offset_bottom = 1394.0
+texture_normal = ExtResource("4_wu84c")
+stretch_mode = 5
+
+[node name="BubbleText" type="Label" parent="CenterContainer/MenuBox/ButtonsBox/HelpButton" unique_id=324407504]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 5.0
+offset_top = 123.0
+offset_right = -1119.0
+offset_bottom = -1001.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.972549, 0.85882354, 1)
+theme_override_colors/font_outline_color = Color(0.08235294, 0.3019608, 0.40784314, 1)
+theme_override_constants/outline_size = 2
+theme_override_fonts/font = ExtResource("5_8ln24")
+theme_override_font_sizes/font_size = 20
+text = "Nasıl
+Oynanır?"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SettingsButton" type="TextureButton" parent="CenterContainer/MenuBox/ButtonsBox" unique_id=1452614636]
+layout_mode = 0
+offset_left = 280.0
+offset_top = 140.0
+offset_right = 1534.0
+offset_bottom = 1394.0
+texture_normal = ExtResource("4_wu84c")
+stretch_mode = 5
+
+[node name="BubbleText" type="Label" parent="CenterContainer/MenuBox/ButtonsBox/SettingsButton" unique_id=946039542]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.972549, 0.85882354, 1)
+theme_override_colors/font_outline_color = Color(0.08235294, 0.3019608, 0.40784314, 1)
+theme_override_constants/outline_size = 2
+theme_override_fonts/font = ExtResource("5_8ln24")
+theme_override_font_sizes/font_size = 20
+text = "Ayarlar"
+horizontal_alignment = 1
+vertical_alignment = 1

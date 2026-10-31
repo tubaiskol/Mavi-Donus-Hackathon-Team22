@@ -2,12 +2,18 @@
 
 [ext_resource type="Texture2D" uid="uid://r80761wkkjmw" path="res://icon.svg" id="1_3xixx"]
 [ext_resource type="Script" uid="uid://cxikomc0og1at" path="res://scripts/trash.gd" id="1_exrr5"]
+[ext_resource type="Texture2D" uid="uid://bng47h4iy6eam" path="res://assets/green_bottle.png" id="2_4sf1q"]
+[ext_resource type="Texture2D" uid="uid://bwwyqaqt0qtne" path="res://assets/black_bag.png" id="3_r3mh6"]
+[ext_resource type="Texture2D" uid="uid://bnraiadx1mdgw" path="res://assets/water_bottle.png" id="4_0q2p5"]
+[ext_resource type="Texture2D" uid="uid://dm8ab7v0jc2mt" path="res://assets/red_bottle.png" id="5_kick1"]
+[ext_resource type="Texture2D" uid="uid://bqbtd5e0npdd2" path="res://assets/toxic_waste.png" id="6_q42go"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_ypjg4"]
 radius = 8.0
 
 [node name="Trash" type="Area2D" unique_id=893758983]
 script = ExtResource("1_exrr5")
+trash_textures = Array[Texture2D]([ExtResource("2_4sf1q"), ExtResource("3_r3mh6"), ExtResource("4_0q2p5"), ExtResource("5_kick1"), ExtResource("6_q42go")])
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1291277514]
 position = Vector2(0.1, 0.1)
