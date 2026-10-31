@@ -190,8 +190,8 @@ func _build_side_quests_card() -> void:
 	_quests_side_panel = PanelContainer.new()
 	_quests_side_panel.name = "QuestsSideCard"
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.03, 0.18, 0.28, 0.78)
-	sb.border_color = Color(0.96, 0.78, 0.28, 0.70)
+	sb.bg_color = Color(0.03, 0.18, 0.28, 0.85)
+	sb.border_color = Color(0.96, 0.78, 0.28, 0.75)
 	sb.set_border_width_all(2)
 	sb.set_corner_radius_all(14)
 	sb.content_margin_left = 14
@@ -200,9 +200,13 @@ func _build_side_quests_card() -> void:
 	sb.content_margin_bottom = 10
 	_quests_side_panel.add_theme_stylebox_override("panel", sb)
 
-	var screen := get_viewport().get_visible_rect().size
-	_quests_side_panel.position = Vector2(screen.x - 275.0, 205.0)
-	_quests_side_panel.custom_minimum_size = Vector2(260, 0)
+	_quests_side_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_quests_side_panel.offset_left = -265.0
+	_quests_side_panel.offset_top = 228.0
+	_quests_side_panel.offset_right = -15.0
+	_quests_side_panel.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_quests_side_panel.grow_vertical = Control.GROW_DIRECTION_END
+	_quests_side_panel.custom_minimum_size = Vector2(250, 0)
 	add_child(_quests_side_panel)
 
 	var vb := VBoxContainer.new()

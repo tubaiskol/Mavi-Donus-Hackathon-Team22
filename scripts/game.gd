@@ -87,7 +87,7 @@ func _build_trash_drop_zone() -> void:
 	_drop_zone = Area2D.new()
 	_drop_zone.name = "TrashDropZone"
 	var screen := get_viewport_rect().size
-	_drop_zone.position = Vector2(screen.x - 135.0, 118.0)
+	_drop_zone.position = Vector2(screen.x - 135.0, 102.0)
 	add_child(_drop_zone)
 
 	var shape := CollisionShape2D.new()
@@ -99,7 +99,7 @@ func _build_trash_drop_zone() -> void:
 	_dock_title_label = Label.new()
 	_dock_title_label.text = "♻️ ÇÖP KONTEYNERİ"
 	_dock_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_dock_title_label.position = Vector2(-115, -88)
+	_dock_title_label.position = Vector2(-115, -80)
 	_dock_title_label.custom_minimum_size = Vector2(230, 26)
 	if MENU_FONT:
 		_dock_title_label.add_theme_font_override("font", MENU_FONT)
@@ -111,17 +111,24 @@ func _build_trash_drop_zone() -> void:
 
 	_dock_sub_label = Label.new()
 	_dock_sub_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_dock_sub_label.position = Vector2(-120, 56)
-	_dock_sub_label.custom_minimum_size = Vector2(240, 40)
+	_dock_sub_label.position = Vector2(-120, 48)
+	_dock_sub_label.custom_minimum_size = Vector2(240, 36)
 	if MENU_FONT:
 		_dock_sub_label.add_theme_font_override("font", MENU_FONT)
-	_dock_sub_label.add_theme_font_size_override("font_size", 14)
+	_dock_sub_label.add_theme_font_size_override("font_size", 13)
 	_dock_sub_label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.65))
 	_dock_sub_label.add_theme_color_override("font_outline_color", Color(0.04, 0.18, 0.28, 0.96))
 	_dock_sub_label.add_theme_constant_override("outline_size", 5)
 	_drop_zone.add_child(_dock_sub_label)
 
 	_drop_zone.area_entered.connect(_on_drop_zone_area_entered)
+	get_viewport().size_changed.connect(_on_viewport_size_changed)
+
+
+func _on_viewport_size_changed() -> void:
+	if _drop_zone:
+		var screen := get_viewport_rect().size
+		_drop_zone.position = Vector2(screen.x - 135.0, 102.0)
 
 
 func _on_drop_zone_area_entered(area: Area2D) -> void:
