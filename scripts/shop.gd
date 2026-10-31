@@ -5,9 +5,9 @@ const SOLAR_COST := 15
 const RED_BOAT_TEX := preload("res://assets/red_boat.png")
 const BLUE_BOAT_TEX := preload("res://assets/blue_boat.png")
 
-var net_bought := false
 var _is_manual_open := false
 var _boat_buttons: Dictionary = {}
+var _active_tab := 0 # 0: Tersane, 1: Ekipman
 
 @onready var panel: PanelContainer = $PanelContainer
 @onready var vbox: VBoxContainer = $PanelContainer/VBoxContainer
@@ -21,6 +21,11 @@ var _boat_buttons: Dictionary = {}
 
 var _subtitle_label: Label
 var _trash_summary_label: Label
+var _tabs_row: HBoxContainer
+var _tab_shipyard_btn: Button
+var _tab_equip_btn: Button
+var _shipyard_box: VBoxContainer
+var _equipment_box: VBoxContainer
 var _boats_grid: GridContainer
 var _close_manual_button: Button
 
@@ -49,7 +54,6 @@ func _build_modern_shop_ui() -> void:
 	add_child(dim)
 	move_child(dim, 0)
 
-	# mavi_donus tarzı ferah, yuvarlatılmış mağaza kartı
 	panel.custom_minimum_size = Vector2(740, 0)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.96, 0.99, 1.0, 0.96)
@@ -63,56 +67,71 @@ func _build_modern_shop_ui() -> void:
 
 	vbox.add_theme_constant_override("separation", 10)
 
-	# Başlık ve alt açıklama (mavi_donus düzeni)
-	title_label.text = "Mağaza & Tersane"
+	title_label.text = "Tersane & Mağaza"
 	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title_label.add_theme_font_size_override("font_size", 38)
+	title_label.add_theme_font_size_override("font_size", 36)
 	title_label.add_theme_color_override("font_color", Color(0.08, 0.24, 0.36))
 	vbox.move_child(title_label, 0)
 
 	_subtitle_label = Label.new()
-	_subtitle_label.text = "Yeni temizlik gemileri satın al, ağını genişlet ve güneş paneliyle emisyonu sıfırla!"
+	_subtitle_label.text = "Gemilerini geliştir, ağını genişlet ve güneş enerjisiyle temiz denizlere açıl!"
 	_subtitle_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_subtitle_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_subtitle_label.add_theme_font_size_override("font_size", 17)
+	_subtitle_label.add_theme_font_size_override("font_size", 16)
 	_subtitle_label.add_theme_color_override("font_color", Color(0.20, 0.36, 0.48))
 	vbox.add_child(_subtitle_label)
 	vbox.move_child(_subtitle_label, 1)
 
-	# Coin satırı ortada büyük ve belirgin
 	coins_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	coins_row.add_theme_constant_override("separation", 10)
 	var coin_icon := coins_row.get_node_or_null("CoinIcon") as TextureRect
 	if coin_icon:
 		coin_icon.custom_minimum_size = Vector2(34, 34)
-	coins_label.add_theme_font_size_override("font_size", 30)
+	coins_label.add_theme_font_size_override("font_size", 28)
 	coins_label.add_theme_color_override("font_color", Color(0.78, 0.52, 0.06))
 	vbox.move_child(coins_row, 2)
 
 	_trash_summary_label = Label.new()
 	_trash_summary_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_trash_summary_label.add_theme_font_size_override("font_size", 16)
+	_trash_summary_label.add_theme_font_size_override("font_size", 15)
 	_trash_summary_label.add_theme_color_override("font_color", Color(0.16, 0.44, 0.56))
 	vbox.add_child(_trash_summary_label)
 	vbox.move_child(_trash_summary_label, 3)
 
-	# Eski tekli butonu gizle, yerine 5 gemilik Tersane koleksiyonunu ekle
-	legacy_boat_button.hide()
+	# --- SEKMELER (Tersane ve Mağaza ayrı container) ---
+	_tabs_row = HBoxContainer.new()
+	_tabs_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	_tabs_row.add_theme_constant_override("separation", 16)
+	vbox.add_child(_tabs_row)
+	vbox.move_child(_tabs_row, 4)
 
-	var boats_header := Label.new()
-	boats_header.text = "⚓ Gemi Koleksiyonu (Satın Al / Seç)"
-	boats_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	boats_header.add_theme_font_size_override("font_size", 20)
-	boats_header.add_theme_color_override("font_color", Color(0.08, 0.28, 0.42))
-	vbox.add_child(boats_header)
-	vbox.move_child(boats_header, 4)
+	_tab_shipyard_btn = Button.new()
+	_tab_shipyard_btn.text = "⚓ Tersane (Gemiler)"
+	_tab_shipyard_btn.custom_minimum_size = Vector2(230, 44)
+	_tab_shipyard_btn.add_theme_font_size_override("font_size", 18)
+	_tab_shipyard_btn.pressed.connect(_switch_tab.bind(0))
+	_tabs_row.add_child(_tab_shipyard_btn)
+
+	_tab_equip_btn = Button.new()
+	_tab_equip_btn.text = "🛠️ Mağaza (Ekipman)"
+	_tab_equip_btn.custom_minimum_size = Vector2(230, 44)
+	_tab_equip_btn.add_theme_font_size_override("font_size", 18)
+	_tab_equip_btn.pressed.connect(_switch_tab.bind(1))
+	_tabs_row.add_child(_tab_equip_btn)
+
+	# --- TERSANE CONTAINER ---
+	_shipyard_box = VBoxContainer.new()
+	_shipyard_box.add_theme_constant_override("separation", 8)
+	vbox.add_child(_shipyard_box)
+	vbox.move_child(_shipyard_box, 5)
 
 	_boats_grid = GridContainer.new()
 	_boats_grid.columns = 2
 	_boats_grid.add_theme_constant_override("h_separation", 10)
 	_boats_grid.add_theme_constant_override("v_separation", 8)
-	vbox.add_child(_boats_grid)
-	vbox.move_child(_boats_grid, 5)
+	_shipyard_box.add_child(_boats_grid)
+
+	legacy_boat_button.hide()
 
 	var red_icon := _make_boat_icon(RED_BOAT_TEX, Rect2i(360, 215, 250, 140), Color.WHITE)
 	var blue_icon := _make_boat_icon(BLUE_BOAT_TEX, Rect2i(190, 260, 230, 140), Color.WHITE)
@@ -135,22 +154,23 @@ func _build_modern_shop_ui() -> void:
 		b.expand_icon = false
 		_style_shop_button(b, false)
 		b.custom_minimum_size = Vector2(330, 50)
-		b.add_theme_font_size_override("font_size", 15)
+		b.add_theme_font_size_override("font_size", 14)
 		b.pressed.connect(_on_boat_button_pressed.bind(boat_id))
 		_boats_grid.add_child(b)
 		_boat_buttons[boat_id] = b
 
-	var equip_header := Label.new()
-	equip_header.text = "🛠️ Ekipman & Enerji Dönüşümü"
-	equip_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	equip_header.add_theme_font_size_override("font_size", 20)
-	equip_header.add_theme_color_override("font_color", Color(0.08, 0.28, 0.42))
-	vbox.add_child(equip_header)
-	vbox.move_child(equip_header, 6)
+	# --- EKİPMAN CONTAINER (Ayrı ferah kutu) ---
+	_equipment_box = VBoxContainer.new()
+	_equipment_box.add_theme_constant_override("separation", 14)
+	vbox.add_child(_equipment_box)
+	vbox.move_child(_equipment_box, 6)
+
+	net_button.reparent(_equipment_box)
+	solar_button.reparent(_equipment_box)
 
 	for b in [net_button, solar_button]:
 		_style_shop_button(b, false)
-		b.custom_minimum_size = Vector2(0, 48)
+		b.custom_minimum_size = Vector2(0, 56)
 		b.add_theme_font_size_override("font_size", 19)
 
 	_style_shop_button(continue_button, true)
@@ -161,6 +181,37 @@ func _build_modern_shop_ui() -> void:
 	_close_manual_button.hide()
 	_close_manual_button.pressed.connect(toggle_manual_shop)
 	vbox.add_child(_close_manual_button)
+
+	_switch_tab(0)
+
+
+func _switch_tab(idx: int) -> void:
+	_active_tab = idx
+	_shipyard_box.visible = (_active_tab == 0)
+	_equipment_box.visible = (_active_tab == 1)
+
+	var active_sb := StyleBoxFlat.new()
+	active_sb.bg_color = Color(0.12, 0.54, 0.72)
+	active_sb.border_color = Color(0.55, 0.88, 1.0)
+	active_sb.set_border_width_all(2)
+	active_sb.set_corner_radius_all(10)
+
+	var inactive_sb := StyleBoxFlat.new()
+	inactive_sb.bg_color = Color(0.82, 0.88, 0.92)
+	inactive_sb.border_color = Color(0.60, 0.70, 0.78)
+	inactive_sb.set_border_width_all(2)
+	inactive_sb.set_corner_radius_all(10)
+
+	if _active_tab == 0:
+		_tab_shipyard_btn.add_theme_stylebox_override("normal", active_sb)
+		_tab_shipyard_btn.add_theme_color_override("font_color", Color.WHITE)
+		_tab_equip_btn.add_theme_stylebox_override("normal", inactive_sb)
+		_tab_equip_btn.add_theme_color_override("font_color", Color(0.2, 0.3, 0.4))
+	else:
+		_tab_shipyard_btn.add_theme_stylebox_override("normal", inactive_sb)
+		_tab_shipyard_btn.add_theme_color_override("font_color", Color(0.2, 0.3, 0.4))
+		_tab_equip_btn.add_theme_stylebox_override("normal", active_sb)
+		_tab_equip_btn.add_theme_color_override("font_color", Color.WHITE)
 
 
 func _make_boat_icon(tex: Texture2D, region: Rect2i, tint: Color) -> Texture2D:
@@ -289,29 +340,23 @@ func _on_boat_button_pressed(boat_id: String) -> void:
 
 
 func _buy_net() -> void:
-	if net_bought or GameState.has_wide_net or GameState.coins < NET_COST:
+	if GameState.has_wide_net or GameState.coins < NET_COST:
 		return
 
-	net_bought = true
-	GameState.has_wide_net = true
-	GameState.recalculate_pickup_radius()
-	GameState.add_coins(-NET_COST)
-	if AudioManager:
-		AudioManager.play_buy()
-	_refresh(GameState.coins)
+	if GameState.buy_net():
+		if AudioManager:
+			AudioManager.play_buy()
+		_refresh(GameState.coins)
 
 
 func _buy_solar() -> void:
 	if GameState.has_solar or GameState.coins < SOLAR_COST:
 		return
 
-	GameState.has_solar = true
-	GameState.update_emission_for_current_round()
-	GameState.add_coins(-SOLAR_COST)
-	GameState._update_quests()
-	if AudioManager:
-		AudioManager.play_solar()
-	_refresh(GameState.coins)
+	if GameState.buy_solar():
+		if AudioManager:
+			AudioManager.play_solar()
+		_refresh(GameState.coins)
 
 
 func _refresh(value: int) -> void:
@@ -346,7 +391,7 @@ func _refresh(value: int) -> void:
 			btn.text = "%s%s\nSatın Al — %d Coin" % [b_name, stat_txt, cost]
 			btn.disabled = value < cost
 
-	var wide_owned := net_bought or GameState.has_wide_net
+	var wide_owned := GameState.has_wide_net
 	net_button.disabled = wide_owned or value < NET_COST
 	solar_button.disabled = GameState.has_solar or value < SOLAR_COST
 
