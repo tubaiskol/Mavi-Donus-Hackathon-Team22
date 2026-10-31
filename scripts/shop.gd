@@ -28,6 +28,7 @@ var _shipyard_box: VBoxContainer
 var _equipment_box: VBoxContainer
 var _boats_grid: GridContainer
 var _close_manual_button: Button
+var _menu_return_button: Button
 
 
 func _ready() -> void:
@@ -174,6 +175,19 @@ func _build_modern_shop_ui() -> void:
 		b.add_theme_font_size_override("font_size", 19)
 
 	_style_shop_button(continue_button, true)
+	continue_button.custom_minimum_size = Vector2(0, 52)
+
+	_menu_return_button = Button.new()
+	_menu_return_button.text = "🏠 Ana Menüye Dön"
+	_style_shop_button(_menu_return_button, false)
+	_menu_return_button.custom_minimum_size = Vector2(0, 50)
+	_menu_return_button.pressed.connect(func():
+		if AudioManager:
+			AudioManager.play_button()
+		get_tree().paused = false
+		get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+	)
+	vbox.add_child(_menu_return_button)
 
 	_close_manual_button = Button.new()
 	_close_manual_button.text = "Kapat ve Oyuna Dön"
@@ -298,6 +312,8 @@ func toggle_manual_shop() -> void:
 	get_tree().paused = true
 	_refresh(GameState.coins)
 	continue_button.hide()
+	if _menu_return_button:
+		_menu_return_button.hide()
 	_close_manual_button.show()
 	show()
 	_center_panel()
@@ -316,6 +332,8 @@ func _open_shop() -> void:
 	continue_button.text = "Devam Et  —  %d. Seviyeye Başla" % (
 		GameState.current_round + 1
 	)
+	if _menu_return_button:
+		_menu_return_button.show()
 
 	show()
 	_center_panel()
