@@ -47,17 +47,14 @@ func _spawn_turtle() -> void:
 	if is_instance_valid(turtle_instance):
 		return
 
+	# Son 1 çöp kala veya denizdeki çöpler bittiğinde yeni kaplumbağa üretilmesin
+	var spawner = get_node_or_null("../Spawner")
+	if spawner and spawner.has_method("get_remaining_trash_count"):
+		if spawner.get_remaining_trash_count() <= 1:
+			return
+
 	var screen := get_viewport_rect()
-	var spawn_position := Vector2(
-		randf_range(
-			screen.position.x + EDGE_MARGIN,
-			screen.end.x - EDGE_MARGIN
-		),
-		randf_range(
-			screen.position.y + EDGE_MARGIN,
-			screen.end.y - EDGE_MARGIN
-		)
-	)
+	var spawn_position := _get_safe_turtle_spawn_position(screen)
 
 	turtle_instance = TURTLE_SCENE.instantiate() as Area2D
 
@@ -67,6 +64,37 @@ func _spawn_turtle() -> void:
 
 	add_child(turtle_instance)
 	turtle_instance.global_position = spawn_position
+
+
+func _get_safe_turtle_spawn_position(screen: Rect2) -> Vector2:
+	var boat := get_node_or_null("../Boat") as Node2D
+	var min_y := screen.position.y + 110.0
+	var max_y := screen.end.y - EDGE_MARGIN
+
+	for attempt in 30:
+		var pos := Vector2(
+			randf_range(screen.position.x + EDGE_MARGIN, screen.end.x - EDGE_MARGIN),
+			randf_range(min_y, max_y)
+		)
+		# 1) Sol üst HUD gösterge paneli (Görüş yok)
+		if pos.x < 410.0 and pos.y < 220.0:
+			continue
+		# 2) Sağ üst Çöp Konteyneri ve Görevler kartı bölgesi (Görüş yok)
+		if pos.x > screen.end.x - 290.0 and pos.y < 350.0:
+			continue
+		# 3) Üst orta tur/zamanlayıcı paneli
+		var center_x := screen.position.x + screen.size.x * 0.5
+		if absf(pos.x - center_x) < 130.0 and pos.y < 140.0:
+			continue
+		if boat and pos.distance_to(boat.global_position) < 120.0:
+			continue
+		return pos
+
+	# Güvenli açık deniz konumu
+	return Vector2(
+		randf_range(screen.position.x + 400.0, maxf(screen.position.x + 420.0, screen.end.x - 300.0)),
+		randf_range(230.0, max_y)
+	)
 
 
 func _on_turtle_removed(turtle: Area2D, spawn_round: int) -> void:
@@ -80,6 +108,12 @@ func _on_turtle_removed(turtle: Area2D, spawn_round: int) -> void:
 
 	if not GameState.running or GameState.game_over:
 		return
+
+	# Son 1 çöp kala yeni kaplumbağa üretimi için süre başlatılmasın
+	var spawner = get_node_or_null("../Spawner")
+	if spawner and spawner.has_method("get_remaining_trash_count"):
+		if spawner.get_remaining_trash_count() <= 1:
+			return
 
 	# Yalnızca kurtarıldıysa yeni üretim için süre başlat.
 	if turtle.get("rescued") == true:
