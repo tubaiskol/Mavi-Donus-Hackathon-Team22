@@ -5,11 +5,11 @@
 [ext_resource type="Script" uid="uid://ug3bjlbeaad5" path="res://scripts/spawner.gd" id="2_0wfyh"]
 [ext_resource type="Script" uid="uid://cqjj1xadja0lq" path="res://scripts/hud.gd" id="3_sugp2"]
 [ext_resource type="Script" uid="uid://b41fdxguha28w" path="res://scripts/shop.gd" id="5_tbgi4"]
-[ext_resource type="PackedScene" uid="uid://bbpx5yrdlyotp" path="res://scenes/turtle.tscn" id="6_tefeu"]
-[ext_resource type="Script" uid="uid://br2hvfbga86bx" path="res://scripts/turtle.gd" id="7_o6xl0"]
+[ext_resource type="Script" uid="uid://del5860xn0y8i" path="res://scripts/turtle_spawner.gd" id="6_tefeu"]
 
 [node name="Main" type="Node2D" unique_id=697647994]
 script = ExtResource("1_jyhfs")
+test_start_level = 2
 
 [node name="Boat" parent="." unique_id=2030048938 instance=ExtResource("1_o5qli")]
 position = Vector2(400, 300)
@@ -87,6 +87,8 @@ text = "Güneş Paneli — 15 coin"
 layout_mode = 2
 text = "2. Tura Başla"
 
-[node name="Turtle" parent="." unique_id=798532387 instance=ExtResource("6_tefeu")]
-position = Vector2(600, 350)
-script = ExtResource("7_o6xl0")
+[node name="TurtleSpawner" type="Node2D" parent="." unique_id=2094901194]
+script = ExtResource("6_tefeu")
+
+[node name="Timer" type="Timer" parent="TurtleSpawner" unique_id=1682578355]
+wait_time = 20.0

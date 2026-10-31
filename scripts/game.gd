@@ -2,6 +2,8 @@ extends Node2D
 
 const TOTAL_LEVELS := 5
 
+@export_range(1, 5, 1) var test_start_level: int = 1
+
 var time_left := 0.0
 
 @onready var spawner = $Spawner
@@ -13,7 +15,10 @@ var time_left := 0.0
 func _ready() -> void:
 	get_tree().paused = false
 	GameState.reset()
-
+	
+	if OS.is_debug_build():
+		GameState.current_round = test_start_level
+		
 	GameState.pollution_changed.connect(_on_pollution_changed)
 	GameState.game_lost.connect(_on_game_lost)
 	GameState.game_won.connect(_on_game_won)
