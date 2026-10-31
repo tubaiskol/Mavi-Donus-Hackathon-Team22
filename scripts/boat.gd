@@ -81,6 +81,13 @@ func _physics_process(delta: float) -> void:
 		screen.end - EDGE_MARGIN
 	)
 
+	# Sol üst HUD paneli altına gemi giremez (görüş kapalı)
+	if position.x < 370.0 and position.y < 162.0:
+		if (370.0 - position.x) < (162.0 - position.y):
+			position.x = 370.0
+		else:
+			position.y = 162.0
+
 	# Teknenin ters dönmesini engelle:
 	# Sağa ve sola giderken görseli yatay çevir (flip_h), asla baş aşağı dönmesin!
 	if absf(velocity.x) > 12.0:
