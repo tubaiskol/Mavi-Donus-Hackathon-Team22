@@ -51,10 +51,12 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="InfoLabel" type="Label" parent="CenterContainer/MenuBox" unique_id=504058511]
-custom_minimum_size = Vector2(1, 1)
-custom_maximum_size = Vector2(1, 1)
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.95, 0.99, 1, 1)
+theme_override_colors/font_outline_color = Color(0.05, 0.22, 0.34, 0.95)
+theme_override_constants/outline_size = 5
+theme_override_fonts/font = ExtResource("5_8ln24")
+theme_override_font_sizes/font_size = 19
 text = "Denizi temizle, yaşamı koru.
 Temiz bir gelecek için kirliliğin kaynağını durdur."
 horizontal_alignment = 1
