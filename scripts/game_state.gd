@@ -10,6 +10,8 @@ signal round_ended
 signal game_won
 signal game_lost
 
+const SAVE_PATH := "user://mavi_donus_save.json"
+
 const INITIAL_TRASH_POLLUTION := 7.0
 const NEW_TRASH_POLLUTION := 3.5
 
@@ -53,52 +55,47 @@ const BOAT_CATALOG := {
 
 const BOAT_ORDER := ["red", "blue", "emerald", "gold", "royal"]
 
-# Oyuncunun gördüğü toplam kirlilik (0 - 100 arası, en az %50'den başlar).
-var pollution := 50.0
-
-# Toplam kirliliğin iki kaynağı: denizdeki atıklar ve dizel motor emisyonu.
-var trash_pollution := 50.0
-var motor_pollution := 0.0
-
-# Seviyede kalan toplam çöp (henüz spawn olmamış olanlar dahil).
-var remaining_trash := 15
-# Başlangıçtaki 7-8 çöpün her birinin başlangıç kirliliğindeki payı.
-var initial_trash_unit_pollution := 7.0
-
-# Dizel motor emisyonu (Seviye 1'de 1.5/sn, sonraki seviyelerde zorlaşır).
-var emission_per_sec := 1.50
-var has_solar := false
-var has_wide_net := false
-var has_blue_boat := false
+# --- KALICI VERİLER (Save / Load ile saklanır) ---
+var coins := 0
+var unlocked_level := 1
+var current_round := 1
 var owned_boats: Array[String] = ["red"]
 var selected_boat := "red"
+var has_solar := false
+var has_wide_net := false
+var delivered_trash := 0
+var total_collected_trash := 0
+var rescued_turtles := 0
+var level_history: Dictionary = {}
+var quests: Array[Dictionary] = []
+
+# --- ANLIK / SEVİYE BAZLI DEĞİŞKENLER ---
+var pollution := 50.0
+var trash_pollution := 50.0
+var motor_pollution := 0.0
+var remaining_trash := 15
+var initial_trash_unit_pollution := 7.0
+
+var emission_per_sec := 1.50
+var carried_trash := 0
 
 var trash_value := -4.0
 var turtle_value := -10.0
 var fish_penalty := 5.0
 
-var coins := 0
-var total_collected_trash := 0
-var carried_trash := 0
-var delivered_trash := 0
-var rescued_turtles := 0
-
 var boat_speed := 220.0
 var pickup_radius := 40.0
-
 var round_time := 60.0
-var current_round := 1
 var running := false
 var game_over := false
 
-var quests: Array[Dictionary] = []
-
 
 func _ready() -> void:
-	_init_quests()
+	_init_default_quests()
+	load_game()
 
 
-func _init_quests() -> void:
+func _init_default_quests() -> void:
 	quests = [
 		{
 			"id": "deliver_5",
@@ -151,6 +148,140 @@ func _init_quests() -> void:
 	]
 
 
+# --- KAYIT VE YÜKLEME SİSTEMİ ---
+func save_game() -> void:
+	var quest_states: Array[Dictionary] = []
+	for q in quests:
+		quest_states.append({
+			"id": q["id"],
+			"progress": int(q["progress"]),
+			"completed": bool(q["completed"])
+		})
+
+	var data := {
+		"coins": coins,
+		"unlocked_level": unlocked_level,
+		"current_round": current_round,
+		"owned_boats": owned_boats,
+		"selected_boat": selected_boat,
+		"has_solar": has_solar,
+		"has_wide_net": has_wide_net,
+		"delivered_trash": delivered_trash,
+		"total_collected_trash": total_collected_trash,
+		"rescued_turtles": rescued_turtles,
+		"level_history": level_history,
+		"quest_states": quest_states
+	}
+
+	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	if file:
+		var json_str := JSON.stringify(data, "\t")
+		file.store_string(json_str)
+		file.close()
+
+
+func load_game() -> void:
+	if not FileAccess.file_exists(SAVE_PATH):
+		recalculate_pickup_radius()
+		return
+
+	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
+	if file == null:
+		return
+
+	var text := file.get_as_text()
+	file.close()
+
+	var test_json_conv := JSON.new()
+	var error := test_json_conv.parse(text)
+	if error != OK:
+		return
+
+	var data: Dictionary = test_json_conv.data
+	if data == null:
+		return
+
+	coins = int(data.get("coins", 0))
+	unlocked_level = clampi(int(data.get("unlocked_level", 1)), 1, 5)
+	current_round = clampi(int(data.get("current_round", 1)), 1, 5)
+
+	var raw_boats = data.get("owned_boats", ["red"])
+	owned_boats.clear()
+	for b in raw_boats:
+		owned_boats.append(str(b))
+	if not ("red" in owned_boats):
+		owned_boats.append("red")
+
+	selected_boat = str(data.get("selected_boat", "red"))
+	if not (selected_boat in owned_boats):
+		selected_boat = "red"
+
+	has_solar = bool(data.get("has_solar", false))
+	has_wide_net = bool(data.get("has_wide_net", false))
+	delivered_trash = int(data.get("delivered_trash", 0))
+	total_collected_trash = int(data.get("total_collected_trash", 0))
+	rescued_turtles = int(data.get("rescued_turtles", 0))
+	level_history = data.get("level_history", {})
+
+	var saved_quests = data.get("quest_states", [])
+	if saved_quests is Array:
+		for sq in saved_quests:
+			var sid = str(sq.get("id", ""))
+			for q in quests:
+				if q["id"] == sid:
+					q["progress"] = int(sq.get("progress", 0))
+					q["completed"] = bool(sq.get("completed", false))
+
+	recalculate_pickup_radius()
+	update_emission_for_current_round()
+	coins_changed.emit(coins)
+	boat_changed.emit(selected_boat)
+	quests_changed.emit()
+
+
+func reset_all_data() -> void:
+	coins = 0
+	unlocked_level = 1
+	current_round = 1
+	owned_boats = ["red"]
+	selected_boat = "red"
+	has_solar = false
+	has_wide_net = false
+	delivered_trash = 0
+	total_collected_trash = 0
+	rescued_turtles = 0
+	level_history.clear()
+	_init_default_quests()
+
+	if FileAccess.file_exists(SAVE_PATH):
+		DirAccess.remove_absolute(SAVE_PATH)
+
+	recalculate_pickup_radius()
+	update_emission_for_current_round()
+	coins_changed.emit(coins)
+	boat_changed.emit(selected_boat)
+	quests_changed.emit()
+	save_game()
+
+
+func record_level_result(level: int, passed: bool) -> void:
+	var l_str := str(level)
+	if not level_history.has(l_str):
+		level_history[l_str] = {"passed": false, "attempts": 0}
+
+	level_history[l_str]["attempts"] = int(level_history[l_str].get("attempts", 0)) + 1
+	if passed:
+		level_history[l_str]["passed"] = true
+		if level >= unlocked_level and unlocked_level < 5:
+			unlocked_level = level + 1
+	else:
+		if not level_history[l_str].has("passed"):
+			level_history[l_str]["passed"] = false
+
+	save_game()
+
+
+# --- OYUN SEVİYE YÖNETİMİ ---
 func get_round_time() -> float:
 	match current_round:
 		1: return 60.0
@@ -161,7 +292,6 @@ func get_round_time() -> float:
 
 
 func get_min_pollution_for_level(level: int) -> float:
-	# Kirlilik en az %50'den başlar ve seviyeye göre başlangıçtaki 7-8 çöple tutarlıdır.
 	match level:
 		1: return 50.0
 		2: return 52.0
@@ -186,10 +316,27 @@ func recalculate_pickup_radius() -> void:
 	pickup_radius = base
 
 
-func start_next_level() -> void:
-	current_round += 1
+func start_level_round(lvl: int) -> void:
+	current_round = clampi(lvl, 1, 5)
 	round_time = get_round_time()
 	update_emission_for_current_round()
+	recalculate_pickup_radius()
+	carried_trash = 0
+	running = false
+	game_over = false
+	start_level_pollution(15, 7)
+	carried_trash_changed.emit(carried_trash, delivered_trash)
+	save_game()
+
+
+func start_next_level() -> void:
+	if current_round < 5:
+		current_round += 1
+		unlocked_level = maxi(unlocked_level, current_round)
+	round_time = get_round_time()
+	update_emission_for_current_round()
+	carried_trash = 0
+	save_game()
 
 
 func start_level_pollution(total_trash: int = 15, initial_trash: int = 7) -> void:
@@ -223,7 +370,6 @@ func collect_trash(clean_amount: float = 4.0, coin_amount: int = 1) -> float:
 	var before_pol := pollution
 	var own_clean := maxf(absf(clean_amount), 0.0)
 
-	# Çöp kendi kirlilik payını ve kalan motor emisyonunun eşit payını temizler.
 	var motor_share := 0.0
 	if remaining_trash > 0:
 		motor_share = motor_pollution / float(remaining_trash)
@@ -266,12 +412,14 @@ func deliver_carried_trash() -> int:
 		3.0
 	)
 	_update_quests()
+	save_game()
 	return bonus_coins
 
 
 func record_turtle_rescue() -> void:
 	rescued_turtles += 1
 	_update_quests()
+	save_game()
 
 
 func _update_quests() -> void:
@@ -306,16 +454,16 @@ func _update_quests() -> void:
 
 	if changed:
 		quests_changed.emit()
+		save_game()
 
 
 func get_active_quest_summary() -> String:
 	for q in quests:
 		if not q["completed"]:
-			return "Görev: %s (%d/%d) [+%d Coin]" % [
+			return "%s (%d/%d)" % [
 				q["title"],
 				int(q["progress"]),
-				int(q["target"]),
-				int(q["reward"])
+				int(q["target"])
 			]
 	return "Tüm Görevler Tamamlandı! Harika iş!"
 
@@ -359,6 +507,7 @@ func _update_pollution() -> void:
 func add_coins(amount: int) -> void:
 	coins = maxi(0, coins + amount)
 	coins_changed.emit(coins)
+	save_game()
 
 
 func is_boat_owned(boat_id: String) -> bool:
@@ -371,6 +520,7 @@ func buy_or_select_boat(boat_id: String) -> bool:
 
 	if is_boat_owned(boat_id):
 		set_boat(boat_id)
+		save_game()
 		return true
 
 	var cost: int = int(BOAT_CATALOG[boat_id]["cost"])
@@ -378,10 +528,30 @@ func buy_or_select_boat(boat_id: String) -> bool:
 		return false
 
 	owned_boats.append(boat_id)
-	if boat_id != "red":
-		has_blue_boat = true
 	add_coins(-cost)
 	set_boat(boat_id)
+	save_game()
+	return true
+
+
+func buy_net() -> bool:
+	if has_wide_net or coins < 8:
+		return false
+	has_wide_net = true
+	add_coins(-8)
+	recalculate_pickup_radius()
+	save_game()
+	return true
+
+
+func buy_solar() -> bool:
+	if has_solar or coins < 15:
+		return false
+	has_solar = true
+	add_coins(-15)
+	update_emission_for_current_round()
+	_update_quests()
+	save_game()
 	return true
 
 
@@ -389,6 +559,7 @@ func set_boat(boat_id: String) -> void:
 	selected_boat = boat_id
 	recalculate_pickup_radius()
 	boat_changed.emit(selected_boat)
+	save_game()
 
 
 func get_boat_name(boat_id: String = "") -> String:
@@ -400,30 +571,3 @@ func get_boat_name(boat_id: String = "") -> String:
 
 func show_toast(message: String, duration: float = 3.0) -> void:
 	toast_requested.emit(message, duration)
-
-
-func reset() -> void:
-	current_round = 1
-	has_solar = false
-	has_wide_net = false
-	has_blue_boat = false
-	owned_boats = ["red"]
-	selected_boat = "red"
-	update_emission_for_current_round()
-	round_time = get_round_time()
-	coins = 0
-	total_collected_trash = 0
-	carried_trash = 0
-	delivered_trash = 0
-	rescued_turtles = 0
-	boat_speed = 220.0
-	recalculate_pickup_radius()
-	running = false
-	game_over = false
-
-	_init_quests()
-	start_level_pollution(15, 7)
-	coins_changed.emit(coins)
-	boat_changed.emit(selected_boat)
-	carried_trash_changed.emit(carried_trash, delivered_trash)
-	quests_changed.emit()
