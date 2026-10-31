@@ -77,7 +77,7 @@ func _style_hud() -> void:
 	card_sb.set_corner_radius_all(14)
 	stats_panel.add_theme_stylebox_override("panel", card_sb)
 	stats_panel.position = Vector2(12, 10)
-	stats_panel.size = Vector2(356, 184)
+	stats_panel.size = Vector2(356, 146)
 	add_child(stats_panel)
 	move_child(stats_panel, 0)
 
@@ -133,11 +133,6 @@ func _style_hud() -> void:
 	_container_label.add_theme_color_override("font_outline_color", Color(0.05, 0.20, 0.32, 0.95))
 	_container_label.add_theme_constant_override("outline_size", 4)
 	stats_box.add_child(_container_label)
-
-	# Sol üst kutu butonu: Sadece Tersane & Mağaza (Tam genişlik)
-	var shop_btn := _make_hud_action_button("🛒 Tersane & Mağaza (M)", _toggle_shop_from_hud, Color(0.12, 0.48, 0.64))
-	shop_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	stats_box.add_child(shop_btn)
 
 	# Üst orta duraklat butonu (Ortaya konumlandırıldı)
 	var top_info: VBoxContainer = get_node_or_null("TopInfo") as VBoxContainer
