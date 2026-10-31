@@ -11,6 +11,7 @@ const MENU_FONT := preload("res://assets/menu_font.ttf")
 @onready var emission_label: Label = $StatsBox/EmissionLabel
 @onready var spawner = get_node("../Spawner")
 @onready var shop_panel = get_node("../ShopPanel")
+@onready var game_root = get_parent()
 
 var _fill_style: StyleBoxFlat
 var _toast_panel: PanelContainer
@@ -18,16 +19,19 @@ var _toast_label: Label
 var _toast_tween: Tween
 var _boat_badge_label: Label
 var _container_label: Label
-var _quest_summary_label: Label
+
+# Sağ taraftaki bağımsız görev paneli
+var _quests_side_panel: PanelContainer
+var _quests_side_label: Label
 var _quests_modal: Control
 var _quests_list_vbox: VBoxContainer
 
 
 func _ready() -> void:
-	# Seviye sonunda oyun duraklasa da sayaç güncellensin.
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
 	_style_hud()
+	_build_side_quests_card()
 	_build_quests_modal()
 
 	GameState.pollution_changed.connect(_on_pollution_changed)
@@ -57,30 +61,32 @@ func _unhandled_input(event: InputEvent) -> void:
 			_toggle_shop_from_hud()
 		elif event.physical_keycode == KEY_G:
 			_toggle_quests_modal()
+		elif event.physical_keycode in [KEY_P, KEY_ESCAPE]:
+			_toggle_pause_from_hud()
 
 
 func _style_hud() -> void:
-	# Sol üst istatistik kutusu: Coin, Gemi, Kirlilik, Emisyon, Konteyner ve Görev bilgisi bir arada
+	# Sol üst kart: Sadece temel istatistikler ve Tersane/Duraklat butonları
 	var stats_panel := PanelContainer.new()
 	stats_panel.name = "StatsBackdrop"
 	stats_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var card_sb := StyleBoxFlat.new()
-	card_sb.bg_color = Color(0.03, 0.16, 0.26, 0.72)
+	card_sb.bg_color = Color(0.03, 0.16, 0.26, 0.76)
 	card_sb.border_color = Color(0.55, 0.88, 1.0, 0.45)
 	card_sb.set_border_width_all(2)
 	card_sb.set_corner_radius_all(14)
 	stats_panel.add_theme_stylebox_override("panel", card_sb)
 	stats_panel.position = Vector2(12, 10)
-	stats_panel.size = Vector2(368, 260)
+	stats_panel.size = Vector2(356, 218)
 	add_child(stats_panel)
 	move_child(stats_panel, 0)
 
-	stats_box.position = Vector2(24, 16)
-	stats_box.custom_minimum_size = Vector2(344, 0)
-	stats_box.add_theme_constant_override("separation", 4)
+	stats_box.position = Vector2(22, 16)
+	stats_box.custom_minimum_size = Vector2(336, 0)
+	stats_box.add_theme_constant_override("separation", 5)
 
-	# Kirlilik çubuğunu mavi_donus tarzında renklendir ve yuvarlat
-	pollution_bar.custom_minimum_size = Vector2(340, 22)
+	# Kirlilik çubuğu
+	pollution_bar.custom_minimum_size = Vector2(332, 22)
 	var bg_sb := StyleBoxFlat.new()
 	bg_sb.bg_color = Color(0.06, 0.14, 0.22, 0.85)
 	bg_sb.border_color = Color(0.75, 0.92, 1.0, 0.55)
@@ -93,7 +99,7 @@ func _style_hud() -> void:
 	_fill_style.set_corner_radius_all(6)
 	pollution_bar.add_theme_stylebox_override("fill", _fill_style)
 
-	# Coin satırını sol üst kutunun içinde belirginleştir ("sağ köşedeki şeyi soldakine ekle")
+	# Coin satırı ve aktif gemi
 	coins_row.add_theme_constant_override("separation", 8)
 	var coin_icon := coins_row.get_node_or_null("CoinIcon") as TextureRect
 	if coin_icon:
@@ -106,13 +112,12 @@ func _style_hud() -> void:
 	_boat_badge_label = Label.new()
 	_boat_badge_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_boat_badge_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_boat_badge_label.add_theme_font_size_override("font_size", 15)
+	_boat_badge_label.add_theme_font_size_override("font_size", 14)
 	_boat_badge_label.add_theme_color_override("font_color", Color(0.75, 0.95, 1.0))
 	_boat_badge_label.add_theme_color_override("font_outline_color", Color(0.06, 0.20, 0.34))
 	_boat_badge_label.add_theme_constant_override("outline_size", 4)
 	coins_row.add_child(_boat_badge_label)
 
-	# Metinlere mavi_donus tarzı kalın okunaklı kontur ekle
 	for lbl in [pollution_label, trash_label, emission_label]:
 		lbl.add_theme_color_override("font_color", Color.WHITE)
 		lbl.add_theme_color_override("font_outline_color", Color(0.06, 0.20, 0.34, 0.95))
@@ -123,36 +128,28 @@ func _style_hud() -> void:
 	trash_label.add_theme_font_size_override("font_size", 16)
 
 	_container_label = Label.new()
-	_container_label.add_theme_font_size_override("font_size", 16)
+	_container_label.add_theme_font_size_override("font_size", 15)
 	_container_label.add_theme_color_override("font_color", Color(0.68, 1.0, 0.80))
 	_container_label.add_theme_color_override("font_outline_color", Color(0.05, 0.20, 0.32, 0.95))
-	_container_label.add_theme_constant_override("outline_size", 5)
+	_container_label.add_theme_constant_override("outline_size", 4)
 	stats_box.add_child(_container_label)
 
-	_quest_summary_label = Label.new()
-	_quest_summary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_quest_summary_label.add_theme_font_size_override("font_size", 14)
-	_quest_summary_label.add_theme_color_override("font_color", Color(1.0, 0.94, 0.65))
-	_quest_summary_label.add_theme_color_override("font_outline_color", Color(0.06, 0.18, 0.30, 0.95))
-	_quest_summary_label.add_theme_constant_override("outline_size", 4)
-	stats_box.add_child(_quest_summary_label)
-
-	# Sol üst kartın içinde Mağaza ve Görevler hızlı erişim butonları
+	# Sol üst kutu butonları: Tersane & Mağaza + Duraklat
 	var btn_row := HBoxContainer.new()
-	btn_row.add_theme_constant_override("separation", 10)
-	var shop_btn := _make_hud_action_button("🛒 Mağaza (M)", _toggle_shop_from_hud, Color(0.12, 0.48, 0.64))
-	var quests_btn := _make_hud_action_button("📋 Görevler (G)", _toggle_quests_modal, Color(0.14, 0.54, 0.42))
+	btn_row.add_theme_constant_override("separation", 8)
+	var shop_btn := _make_hud_action_button("🛒 Tersane & Mağaza (M)", _toggle_shop_from_hud, Color(0.12, 0.48, 0.64))
+	var pause_btn := _make_hud_action_button("⏸️ Duraklat (ESC)", _toggle_pause_from_hud, Color(0.18, 0.36, 0.50))
 	btn_row.add_child(shop_btn)
-	btn_row.add_child(quests_btn)
+	btn_row.add_child(pause_btn)
 	stats_box.add_child(btn_row)
 
-	# Alt orta: şık kapsül UI kartı içinde bildirim / açıklama (Toast) etiketi
+	# Alt orta bildirim kapsülü
 	_toast_panel = PanelContainer.new()
 	_toast_panel.name = "ToastPanel"
 	_toast_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var toast_sb := StyleBoxFlat.new()
-	toast_sb.bg_color = Color(0.03, 0.20, 0.32, 0.84)
-	toast_sb.border_color = Color(0.58, 0.90, 1.0, 0.80)
+	toast_sb.bg_color = Color(0.03, 0.20, 0.32, 0.88)
+	toast_sb.border_color = Color(0.58, 0.90, 1.0, 0.85)
 	toast_sb.set_border_width_all(2)
 	toast_sb.set_corner_radius_all(18)
 	toast_sb.content_margin_left = 24
@@ -183,12 +180,55 @@ func _style_hud() -> void:
 	_toast_panel.add_child(_toast_label)
 
 
+func _build_side_quests_card() -> void:
+	# SAĞ PANELDE AYRI GÖREVLER KARTI (Konteynerin altında ferah görünüm)
+	_quests_side_panel = PanelContainer.new()
+	_quests_side_panel.name = "QuestsSideCard"
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.03, 0.18, 0.28, 0.78)
+	sb.border_color = Color(0.96, 0.78, 0.28, 0.70)
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(14)
+	sb.content_margin_left = 14
+	sb.content_margin_right = 14
+	sb.content_margin_top = 10
+	sb.content_margin_bottom = 10
+	_quests_side_panel.add_theme_stylebox_override("panel", sb)
+
+	var screen := get_viewport().get_visible_rect().size
+	_quests_side_panel.position = Vector2(screen.x - 275.0, 205.0)
+	_quests_side_panel.custom_minimum_size = Vector2(260, 0)
+	add_child(_quests_side_panel)
+
+	var vb := VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 4)
+	_quests_side_panel.add_child(vb)
+
+	var title_btn := Button.new()
+	title_btn.text = "📋 Görevler (G)"
+	title_btn.flat = true
+	title_btn.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_btn.add_theme_font_size_override("font_size", 16)
+	title_btn.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35))
+	title_btn.pressed.connect(_toggle_quests_modal)
+	vb.add_child(title_btn)
+
+	_quests_side_label = Label.new()
+	_quests_side_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_quests_side_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_quests_side_label.add_theme_font_size_override("font_size", 13)
+	_quests_side_label.add_theme_color_override("font_color", Color(0.90, 0.96, 1.0))
+	_quests_side_label.add_theme_color_override("font_outline_color", Color(0.04, 0.16, 0.26))
+	_quests_side_label.add_theme_constant_override("outline_size", 4)
+	vb.add_child(_quests_side_label)
+
+
 func _make_hud_action_button(text: String, cb: Callable, base_color: Color) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b.custom_minimum_size = Vector2(0, 34)
-	b.add_theme_font_size_override("font_size", 15)
+	b.add_theme_font_size_override("font_size", 14)
 	b.add_theme_color_override("font_color", Color.WHITE)
 	b.pressed.connect(cb)
 
@@ -217,6 +257,11 @@ func _toggle_shop_from_hud() -> void:
 		AudioManager.play_button()
 	if shop_panel and shop_panel.has_method("toggle_manual_shop"):
 		shop_panel.toggle_manual_shop()
+
+
+func _toggle_pause_from_hud() -> void:
+	if game_root and game_root.has_method("toggle_pause"):
+		game_root.toggle_pause()
 
 
 func _build_quests_modal() -> void:
@@ -266,7 +311,7 @@ func _build_quests_modal() -> void:
 	sub.text = "Topladığın çöpleri sağ üst köşedeki Çöp Konteynerine bırakarak ek coin ve görev ödülleri kazan!"
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	sub.add_theme_font_size_override("font_size", 17)
+	sub.add_theme_font_size_override("font_size", 16)
 	sub.add_theme_color_override("font_color", Color(0.20, 0.38, 0.50))
 	vb.add_child(sub)
 
@@ -324,13 +369,13 @@ func _refresh_quests_modal() -> void:
 		var title_lbl := Label.new()
 		title_lbl.text = "%s  (%d / %d)" % [q["title"], int(q["progress"]), int(q["target"])]
 		title_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		title_lbl.add_theme_font_size_override("font_size", 17)
+		title_lbl.add_theme_font_size_override("font_size", 16)
 		title_lbl.add_theme_color_override("font_color", Color(0.08, 0.26, 0.36))
 		hbox.add_child(title_lbl)
 
 		var rew_lbl := Label.new()
 		rew_lbl.text = "Tamamlandı!" if done else "+%d Coin" % int(q["reward"])
-		rew_lbl.add_theme_font_size_override("font_size", 17)
+		rew_lbl.add_theme_font_size_override("font_size", 16)
 		rew_lbl.add_theme_color_override(
 			"font_color",
 			Color(0.12, 0.56, 0.32) if done else Color(0.76, 0.48, 0.04)
@@ -378,12 +423,12 @@ func _on_boat_changed(boat_id: String) -> void:
 
 func _on_carried_trash_changed(carried: int, delivered: int) -> void:
 	if _container_label:
-		_container_label.text = "Teknedeki Çöp: %d  |  Konteynere Dökülen: %d" % [carried, delivered]
+		_container_label.text = "Teknede: %d Çöp | Konteynere: %d" % [carried, delivered]
 
 
 func _on_quests_changed() -> void:
-	if _quest_summary_label:
-		_quest_summary_label.text = "📋 " + GameState.get_active_quest_summary()
+	if _quests_side_label:
+		_quests_side_label.text = GameState.get_active_quest_summary()
 	if _quests_modal and _quests_modal.visible:
 		_refresh_quests_modal()
 
@@ -393,7 +438,7 @@ func _update_trash_label() -> void:
 	var remaining: int = spawner.get_remaining_trash_count()
 	var collected := clampi(total - remaining, 0, total)
 
-	trash_label.text = "Seviye Çöpü: %d / %d" % [
+	trash_label.text = "Denizdeki Çöp: %d / %d" % [
 		collected,
 		total
 	]
@@ -401,8 +446,8 @@ func _update_trash_label() -> void:
 
 func _update_emission_label() -> void:
 	if GameState.has_solar:
-		emission_label.text = "Emisyon: 0 / sn (Güneş Paneli)"
+		emission_label.text = "Emisyon: 0/sn (Güneş)"
 		emission_label.add_theme_color_override("font_color", Color(0.58, 1.0, 0.72))
 	else:
-		emission_label.text = "Emisyon: +%.2f / sn (Dizel)" % GameState.emission_per_sec
+		emission_label.text = "Emisyon: +%.2f/sn (Dizel)" % GameState.emission_per_sec
 		emission_label.add_theme_color_override("font_color", Color(1.0, 0.82, 0.52))
