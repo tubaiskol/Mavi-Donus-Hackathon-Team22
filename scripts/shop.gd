@@ -7,7 +7,7 @@ const SOLAR_COST := 15
 var speed_bought := false
 var net_bought := false
 
-@onready var coins_label: Label = $PanelContainer/VBoxContainer/CoinsLabel
+@onready var coins_label: Label = $PanelContainer/VBoxContainer/CoinsRow/CoinsLabel
 @onready var speed_button: Button = $PanelContainer/VBoxContainer/SpeedButton
 @onready var net_button: Button = $PanelContainer/VBoxContainer/NetButton
 @onready var solar_button: Button = $PanelContainer/VBoxContainer/SolarButton
@@ -85,7 +85,7 @@ func _buy_solar() -> void:
 
 
 func _refresh(value: int) -> void:
-	coins_label.text = "Coin: %d" % value
+	coins_label.text = str(value)
 
 	speed_button.disabled = speed_bought or value < SPEED_COST
 	net_button.disabled = net_bought or value < NET_COST

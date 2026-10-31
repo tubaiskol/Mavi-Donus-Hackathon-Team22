@@ -2,7 +2,7 @@ extends CanvasLayer
 
 @onready var pollution_label: Label = $StatsBox/PollutionLabel
 @onready var pollution_bar: ProgressBar = $StatsBox/PollutionBar
-@onready var coins_label: Label = $StatsBox/CoinsLabel
+@onready var coins_label: Label = $StatsBox/CoinsRow/CoinsLabel
 @onready var trash_label: Label = $StatsBox/TrashLabel
 @onready var spawner = get_node("../Spawner")
 @onready var emission_label: Label = $StatsBox/EmissionLabel
@@ -30,7 +30,7 @@ func _on_pollution_changed(value: float) -> void:
 
 
 func _on_coins_changed(value: int) -> void:
-	coins_label.text = "Coin: %d" % value
+	coins_label.text = str(GameState.coins)
 
 
 func _update_trash_label() -> void:

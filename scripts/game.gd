@@ -7,12 +7,19 @@ const TOTAL_LEVELS := 5
 var time_left := 0.0
 
 @onready var spawner = $Spawner
-@onready var time_label: Label = $HUD/StatsBox/TimeLabel
+@onready var top_info: VBoxContainer = $HUD/TopInfo
+@onready var level_label: Label = $HUD/TopInfo/LevelLabel
+@onready var time_label: Label = $HUD/TopInfo/TimeRow/TimeLabel
 @onready var shop_panel: CanvasLayer = $ShopPanel
 @onready var continue_button: Button = $ShopPanel/PanelContainer/VBoxContainer/ContinueButton
 
 
 func _ready() -> void:
+	# Üst bilgi alanını pencerenin tamamına yay.
+	top_info.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	top_info.offset_top = 16.0
+	top_info.offset_bottom = 16.0
+	
 	get_tree().paused = false
 	GameState.reset()
 	
@@ -98,11 +105,9 @@ func _start_next_level() -> void:
 
 
 func _update_time_label() -> void:
-	time_label.text = "Seviye: %d / %d | Süre: %d sn" % [
-		GameState.current_round,
-		TOTAL_LEVELS,
-		ceili(time_left)
-	]
+	level_label.text = "Seviye %d" % GameState.current_round
+	time_label.text = "%d sn" % ceili(time_left)
+
 
 
 func _lose_level() -> void:
