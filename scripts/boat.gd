@@ -54,8 +54,14 @@ func _physics_process(delta: float) -> void:
 			10.0 * delta
 		)
 
+	var is_moving := velocity.length() > 20.0
+
+	if GameState.running and not GameState.game_over:
+		if is_moving and not GameState.has_solar:
+			GameState.add_pollution(GameState.emission_per_sec * delta)
+
 	if AudioManager:
-		if velocity.length() > 20.0 and GameState.running and not GameState.game_over:
+		if is_moving and GameState.running and not GameState.game_over:
 			AudioManager.start_engine(GameState.has_solar)
 		else:
 			AudioManager.stop_engine()

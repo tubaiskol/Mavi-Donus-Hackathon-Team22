@@ -6,19 +6,14 @@ extends Area2D
 
 @onready var trash_sprite: Sprite2D = $Sprite2D
 
-var own_pollution := 0.0
+var trash_name := "Çöp"
+var coin_reward := 1
+var pollution_reduction := 3.0
 var collected := false
 
 
 func _ready() -> void:
 	_apply_random_texture()
-	if is_initial_trash:
-		# Başlangıçtaki 50 puana zaten dahil.
-		own_pollution = GameState.INITIAL_TRASH_POLLUTION
-	else:
-		own_pollution = GameState.NEW_TRASH_POLLUTION
-		GameState.add_new_trash_pollution()
-
 	area_entered.connect(_on_area_entered)
 
 
@@ -32,20 +27,25 @@ func _on_area_entered(area: Area2D) -> void:
 	# Sayacın bu nesneyi artık toplanmış kabul etmesini sağla.
 	collected = true
 
-	var cleaned := GameState.collect_trash(own_pollution)
+	var cleaned := GameState.collect_trash(pollution_reduction, coin_reward)
 
 	if AudioManager:
-		if trash_sprite.texture and "toxic" in trash_sprite.texture.resource_path:
+		if "toxic" in trash_sprite.texture.resource_path.to_lower():
 			AudioManager.play_toxic()
 		else:
 			AudioManager.play_trash()
 
 	print(
-		"Çöp toplandı | Atık payı: ", snappedf(cleaned, 0.1),
-		" | Kirlilik: ", snappedf(GameState.pollution, 0.1)
+		"%s toplandı | +%d Coin | -%.1f Kirlilik | Güncel Kirlilik: %.1f" % [
+			trash_name,
+			coin_reward,
+			cleaned,
+			GameState.pollution
+		]
 	)
 
 	queue_free()
+
 
 func _apply_random_texture() -> void:
 	if trash_textures.is_empty():
@@ -56,6 +56,28 @@ func _apply_random_texture() -> void:
 		return
 
 	trash_sprite.texture = chosen_texture
+
+	var path := chosen_texture.resource_path.to_lower()
+	if "toxic" in path:
+		trash_name = "Toksik Atık"
+		coin_reward = 3
+		pollution_reduction = 8.0
+	elif "black_bag" in path or "bag" in path:
+		trash_name = "Çöp Torbası"
+		coin_reward = 2
+		pollution_reduction = 5.0
+	elif "red_bottle" in path:
+		trash_name = "Kimyasal Şişe"
+		coin_reward = 2
+		pollution_reduction = 4.0
+	elif "green_bottle" in path:
+		trash_name = "Cam Şişe"
+		coin_reward = 1
+		pollution_reduction = 3.0
+	else:
+		trash_name = "Plastik Şişe"
+		coin_reward = 1
+		pollution_reduction = 3.0
 
 	# Farklı çözünürlüklerdeki görselleri ortak boyuta getir.
 	var image_size := chosen_texture.get_size()

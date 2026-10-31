@@ -65,9 +65,6 @@ func _check_level_completion() -> void:
 	if time_left <= 0.0:
 		return
 
-	if GameState.pollution > 0.0:
-		return
-
 	# Henüz üretilmeyen çöpler de bu sayıya dahildir.
 	if spawner.get_remaining_trash_count() > 0:
 		return
