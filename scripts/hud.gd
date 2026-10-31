@@ -5,7 +5,7 @@ extends CanvasLayer
 @onready var coins_label: Label = $StatsBox/CoinsLabel
 @onready var trash_label: Label = $StatsBox/TrashLabel
 @onready var spawner = get_node("../Spawner")
-
+@onready var emission_label: Label = $StatsBox/EmissionLabel
 
 func _ready() -> void:
 	# Seviye sonunda oyun duraklasa da sayaç güncellensin.
@@ -21,6 +21,7 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	_update_trash_label()
+	_update_emission_label()
 
 
 func _on_pollution_changed(value: float) -> void:
@@ -41,3 +42,9 @@ func _update_trash_label() -> void:
 		collected,
 		total
 	]
+
+func _update_emission_label() -> void:
+	if GameState.has_solar:
+		emission_label.text = "Emisyon: 0/sn (Güneş)"
+	else:
+		emission_label.text = "Emisyon: +%.2f/sn (Dizel)" % GameState.emission_per_sec

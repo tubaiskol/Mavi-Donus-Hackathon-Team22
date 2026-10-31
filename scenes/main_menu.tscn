@@ -1,0 +1,47 @@
+[gd_scene format=3 uid="uid://dnethupk31onk"]
+
+[ext_resource type="Script" uid="uid://blf2ok3kgwvbd" path="res://scripts/main_menu.gd" id="1_l6cm7"]
+
+[node name="MainMenu" type="Control" unique_id=1677856287]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_l6cm7")
+
+[node name="Background" type="ColorRect" parent="." unique_id=223963503]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.07058824, 0.24705882, 0.3137255, 1)
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1993189698]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MenuBox" type="VBoxContainer" parent="CenterContainer" unique_id=696229997]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/MenuBox" unique_id=1136999517]
+layout_mode = 2
+text = "Mavi Dönüş"
+
+[node name="InfoLabel" type="Label" parent="CenterContainer/MenuBox" unique_id=504058511]
+layout_mode = 2
+text = "WASD / Ok tuşlarıyla tekneyi hareket ettir.
+60 saniye dolmadan kirliliği sıfırla ve tüm çöpleri topla.
+2. seviyeden itibaren carettaların yanında 2 saniye kalarak kurtar.
+Mağazadan yükseltmeler al ve 5 seviyeyi tamamla."
+
+[node name="StartButton" type="Button" parent="CenterContainer/MenuBox" unique_id=1103074080]
+layout_mode = 2
+text = "Başla"

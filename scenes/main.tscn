@@ -10,7 +10,6 @@
 
 [node name="Main" type="Node2D" unique_id=697647994]
 script = ExtResource("1_jyhfs")
-test_start_level = 2
 
 [node name="Boat" parent="." unique_id=2030048938 instance=ExtResource("1_o5qli")]
 position = Vector2(400, 300)
@@ -46,6 +45,9 @@ layout_mode = 2
 layout_mode = 2
 
 [node name="TrashLabel" type="Label" parent="HUD/StatsBox" unique_id=1410808958]
+layout_mode = 2
+
+[node name="EmissionLabel" type="Label" parent="HUD/StatsBox" unique_id=1345422454]
 layout_mode = 2
 
 [node name="ShopPanel" type="CanvasLayer" parent="." unique_id=1414329041]

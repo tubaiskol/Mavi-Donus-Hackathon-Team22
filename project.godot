@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Mavi Dönüş"
-run/main_scene="uid://dkinyhihgksox"
+run/main_scene="uid://dnethupk31onk"
 config/features=PackedStringArray("4.7", "Mobile")
 config/icon="res://icon.svg"
 
