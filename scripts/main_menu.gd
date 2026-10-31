@@ -11,6 +11,8 @@ func _ready() -> void:
 
 
 func _start_game() -> void:
+	if AudioManager:
+		AudioManager.play_button()
 	start_button.disabled = true
 	get_tree().change_scene_to_file("res://scenes/main.tscn")
 

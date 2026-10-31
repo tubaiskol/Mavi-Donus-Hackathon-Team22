@@ -59,6 +59,8 @@ func _buy_speed() -> void:
 	speed_bought = true
 	GameState.boat_speed += 60.0
 	GameState.add_coins(-SPEED_COST)
+	if AudioManager:
+		AudioManager.play_buy()
 
 
 func _buy_net() -> void:
@@ -68,6 +70,8 @@ func _buy_net() -> void:
 	net_bought = true
 	GameState.pickup_radius += 25.0
 	GameState.add_coins(-NET_COST)
+	if AudioManager:
+		AudioManager.play_buy()
 
 
 func _buy_solar() -> void:
@@ -76,6 +80,8 @@ func _buy_solar() -> void:
 
 	GameState.has_solar = true
 	GameState.add_coins(-SOLAR_COST)
+	if AudioManager:
+		AudioManager.play_solar()
 
 
 func _refresh(value: int) -> void:

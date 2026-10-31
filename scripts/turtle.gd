@@ -67,6 +67,9 @@ func _rescue() -> void:
 	rescued = true
 	rescue_bar.hide()
 
+	if AudioManager:
+		AudioManager.play_turtle()
+
 	GameState.add_coins(RESCUE_REWARD)
 	GameState.add_pollution(GameState.turtle_value)
 

@@ -32,11 +32,17 @@ func _on_area_entered(area: Area2D) -> void:
 	# Sayacın bu nesneyi artık toplanmış kabul etmesini sağla.
 	collected = true
 
-	GameState.collect_trash(own_pollution)
+	var cleaned := GameState.collect_trash(own_pollution)
+
+	if AudioManager:
+		if trash_sprite.texture and "toxic" in trash_sprite.texture.resource_path:
+			AudioManager.play_toxic()
+		else:
+			AudioManager.play_trash()
 
 	print(
-		"Çöp toplandı | Atık payı: ", own_pollution,
-		" | Kirlilik: ", GameState.pollution
+		"Çöp toplandı | Atık payı: ", snappedf(cleaned, 0.1),
+		" | Kirlilik: ", snappedf(GameState.pollution, 0.1)
 	)
 
 	queue_free()

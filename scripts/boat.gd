@@ -54,6 +54,12 @@ func _physics_process(delta: float) -> void:
 			10.0 * delta
 		)
 
+	if AudioManager:
+		if velocity.length() > 20.0 and GameState.running and not GameState.game_over:
+			AudioManager.start_engine(GameState.has_solar)
+		else:
+			AudioManager.stop_engine()
+
 	_update_pickup_shape()
 
 

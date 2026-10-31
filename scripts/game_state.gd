@@ -43,7 +43,7 @@ func _process(delta: float) -> void:
 		return
 
 	if _pollution_round != current_round:
-		start_level_pollution(15, 10)
+		start_level_pollution(15, 15)
 
 	if not has_solar:
 		motor_pollution += emission_per_sec * delta
@@ -51,12 +51,14 @@ func _process(delta: float) -> void:
 
 
 func start_level_pollution(
-	total_trash: int,
-	initial_trash: int
+	total_trash: int = 15,
+	_initial_trash: int = 15
 ) -> void:
 	_pollution_round = current_round
 	remaining_trash = total_trash
-	trash_pollution = initial_trash * INITIAL_TRASH_POLLUTION
+	# Seviyeye göre başlangıç kirliliği (1. seviyede 50, 5. seviyede 70)
+	var base_pollution := 50.0 + (current_round - 1) * 5.0
+	trash_pollution = clampf(base_pollution, 40.0, 80.0)
 	motor_pollution = 0.0
 	_update_pollution()
 
@@ -69,15 +71,16 @@ func add_new_trash_pollution() -> void:
 	_update_pollution()
 
 
-func collect_trash(own_pollution: float) -> void:
+func collect_trash(_own_pollution: float = -1.0) -> float:
 	if game_over or not running or remaining_trash <= 0:
-		return
+		return 0.0
 
-	# Bu çöp, kalan motor kirliliğinden kendi payını temizler.
+	# Her çöp, kalan çöp ve motor kirliliğinden eşit pay temizler.
+	var trash_share := trash_pollution / float(remaining_trash)
 	var motor_share := motor_pollution / float(remaining_trash)
 
 	trash_pollution = maxf(
-		trash_pollution - own_pollution,
+		trash_pollution - trash_share,
 		0.0
 	)
 	motor_pollution = maxf(
@@ -88,6 +91,8 @@ func collect_trash(own_pollution: float) -> void:
 	remaining_trash -= 1
 	add_coins(1)
 	_update_pollution()
+
+	return trash_share
 
 
 func clean_motor_pollution(amount: float) -> void:
@@ -153,5 +158,5 @@ func reset() -> void:
 	running = false
 	game_over = false
 
-	start_level_pollution(15, 10)
+	start_level_pollution(15, 15)
 	coins_changed.emit(coins)
