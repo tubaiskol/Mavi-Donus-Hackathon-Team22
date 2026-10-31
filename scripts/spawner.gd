@@ -125,7 +125,7 @@ func _get_random_spawn_position() -> Vector2:
 	var min_y := screen.position.y + TOP_HUD_MARGIN
 	var max_y := screen.end.y - SPAWN_MARGIN
 
-	for attempt in 16:
+	for attempt in 30:
 		var pos := Vector2(
 			randf_range(
 				screen.position.x + SPAWN_MARGIN,
@@ -133,22 +133,31 @@ func _get_random_spawn_position() -> Vector2:
 			),
 			randf_range(min_y, max_y)
 		)
-		# Sol üst HUD paneli veya sağ üst Çöp Konteyneri üzerine çöp düşmesin
-		if pos.x < 400.0 and pos.y < 290.0:
+		if _is_position_in_forbidden_zone(pos, screen):
 			continue
-		if pos.x > screen.end.x - 270.0 and pos.y < 240.0:
-			continue
-		if boat and pos.distance_to(boat.global_position) < 100.0:
+		if boat and pos.distance_to(boat.global_position) < 90.0:
 			continue
 		return pos
 
+	# Güvenli açık deniz fallback'i (Asla yasaklı UI bölgelerine düşmez)
 	return Vector2(
-		randf_range(
-			screen.position.x + SPAWN_MARGIN,
-			screen.end.x - SPAWN_MARGIN
-		),
-		randf_range(min_y, max_y)
+		randf_range(screen.position.x + 400.0, maxf(screen.position.x + 420.0, screen.end.x - 300.0)),
+		randf_range(230.0, max_y)
 	)
+
+
+func _is_position_in_forbidden_zone(pos: Vector2, screen: Rect2) -> bool:
+	# 1) Sol üst HUD gösterge paneli (Kirlilik, sayaç ve istatistik kartı)
+	if pos.x < 400.0 and pos.y < 210.0:
+		return true
+	# 2) Sağ üst Çöp Konteyneri ve Görevler kartı bölgesi (Görüş yok)
+	if pos.x > screen.end.x - 290.0 and pos.y < 350.0:
+		return true
+	# 3) Üst orta Tur / Zamanlayıcı / Duraklat paneli
+	var center_x := screen.position.x + screen.size.x * 0.5
+	if absf(pos.x - center_x) < 130.0 and pos.y < 140.0:
+		return true
+	return false
 
 
 func get_remaining_trash_count() -> int:
