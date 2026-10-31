@@ -2,14 +2,15 @@ extends Node2D
 
 const TRASH_SCENE := preload("res://scenes/trash.tscn")
 const MAX_VISIBLE_TRASH := 15
-const SPAWN_MARGIN := 48.0
+const SPAWN_MARGIN := 64.0
+const TOP_HUD_MARGIN := 108.0
 
 var total_trash := 15
 var TOTAL_TRASH: int:
 	get:
 		return total_trash
 
-var initial_spawn_count := 5
+var initial_spawn_count := 7
 var spawned_total := 0
 var active_round := 0
 
@@ -18,7 +19,6 @@ var active_round := 0
 
 func _ready() -> void:
 	spawn_timer.timeout.connect(_spawn_trash)
-	start_level()
 
 
 func _process(_delta: float) -> void:
@@ -28,9 +28,12 @@ func _process(_delta: float) -> void:
 
 
 func start_level() -> void:
+	spawn_timer.stop()
+
 	# Önceki seviyeye ait nesneleri temizle.
 	for child in get_children():
 		if child.is_in_group("trash"):
+			child.remove_from_group("trash")
 			child.queue_free()
 
 	active_round = GameState.current_round
@@ -41,10 +44,13 @@ func start_level() -> void:
 	initial_spawn_count = _get_initial_trash_for_level(active_round)
 	spawn_timer.wait_time = _get_spawn_interval_for_level(active_round)
 
-	# Seviye başladığında denizde hemen rastgele çöpler bulunsun.
+	# Başlangıç kirliliğini (en az %50) başlangıçtaki 7-8 çöple tutarlı başlat.
 	var initial_count := mini(initial_spawn_count, total_trash)
+	GameState.start_level_pollution(total_trash, initial_count)
+
+	# Seviye başladığında denizde hemen 7-8 varsayılan çöp bulunsun.
 	for i in initial_count:
-		_spawn_single_trash()
+		_spawn_single_trash(true)
 
 	if spawned_total < total_trash:
 		spawn_timer.start()
@@ -60,10 +66,11 @@ func _get_trash_count_for_level(level: int) -> int:
 
 
 func _get_initial_trash_for_level(level: int) -> int:
+	# Oyun ve seviyeler başlarken denizde 7-8 varsayılan çöp bulunur.
 	match level:
-		1: return 5
-		2: return 6
-		3: return 7
+		1: return 7
+		2: return 7
+		3: return 8
 		4: return 8
 		_: return 8
 
@@ -88,10 +95,11 @@ func _spawn_trash() -> void:
 	if _get_active_trash_count() >= MAX_VISIBLE_TRASH:
 		return
 
-	_spawn_single_trash()
+	# Sonradan spawn olan çöpler kirliliği artırır (is_initial_trash = false).
+	_spawn_single_trash(false)
 
 
-func _spawn_single_trash() -> void:
+func _spawn_single_trash(is_initial: bool = false) -> void:
 	if spawned_total >= total_trash:
 		spawn_timer.stop()
 		return
@@ -99,6 +107,7 @@ func _spawn_single_trash() -> void:
 	var spawn_position := _get_random_spawn_position()
 
 	var trash := TRASH_SCENE.instantiate() as Area2D
+	trash.set("is_initial_trash", is_initial)
 	trash.add_to_group("trash")
 	add_child(trash)
 	trash.global_position = spawn_position
@@ -113,19 +122,23 @@ func _spawn_single_trash() -> void:
 func _get_random_spawn_position() -> Vector2:
 	var screen := get_viewport_rect()
 	var boat := get_node_or_null("../Boat") as Node2D
+	var min_y := screen.position.y + TOP_HUD_MARGIN
+	var max_y := screen.end.y - SPAWN_MARGIN
 
-	for attempt in 10:
+	for attempt in 16:
 		var pos := Vector2(
 			randf_range(
 				screen.position.x + SPAWN_MARGIN,
 				screen.end.x - SPAWN_MARGIN
 			),
-			randf_range(
-				screen.position.y + SPAWN_MARGIN,
-				screen.end.y - SPAWN_MARGIN
-			)
+			randf_range(min_y, max_y)
 		)
-		if boat and pos.distance_to(boat.global_position) < 90.0:
+		# Sol üst HUD paneli veya sağ üst Çöp Konteyneri üzerine çöp düşmesin
+		if pos.x < 400.0 and pos.y < 290.0:
+			continue
+		if pos.x > screen.end.x - 270.0 and pos.y < 240.0:
+			continue
+		if boat and pos.distance_to(boat.global_position) < 100.0:
 			continue
 		return pos
 
@@ -134,10 +147,7 @@ func _get_random_spawn_position() -> Vector2:
 			screen.position.x + SPAWN_MARGIN,
 			screen.end.x - SPAWN_MARGIN
 		),
-		randf_range(
-			screen.position.y + SPAWN_MARGIN,
-			screen.end.y - SPAWN_MARGIN
-		)
+		randf_range(min_y, max_y)
 	)
 
 
