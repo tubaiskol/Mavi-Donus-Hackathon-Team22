@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://blf2ok3kgwvbd" path="res://scripts/main_menu.gd" id="1_l6cm7"]
 [ext_resource type="Texture2D" uid="uid://bl7elj8j6iy4f" path="res://assets/menu_background.jpg" id="2_ekxnf"]
+[ext_resource type="Texture2D" uid="uid://dfoljtj4gt2l1" path="res://assets/title_logo.png" id="3_bqqt6"]
 
 [node name="MainMenu" type="Control" unique_id=1677856287]
 layout_mode = 3
@@ -26,26 +27,38 @@ stretch_mode = 6
 
 [node name="CenterContainer" type="CenterContainer" parent="." unique_id=1993189698]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
+anchors_preset = 9
 anchor_bottom = 1.0
-grow_horizontal = 2
+offset_left = 60.0
+offset_right = 540.0
 grow_vertical = 2
 
 [node name="MenuBox" type="VBoxContainer" parent="CenterContainer" unique_id=696229997]
+custom_minimum_size = Vector2(420, 0)
 layout_mode = 2
 
-[node name="TitleLabel" type="Label" parent="CenterContainer/MenuBox" unique_id=1136999517]
+[node name="LogoMargin" type="MarginContainer" parent="CenterContainer/MenuBox" unique_id=1622170138]
 layout_mode = 2
-text = "Mavi Dönüş"
+
+[node name="TitleLogo" type="TextureRect" parent="CenterContainer/MenuBox/LogoMargin" unique_id=756187336]
+custom_minimum_size = Vector2(420, 210)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("3_bqqt6")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="InfoLabel" type="Label" parent="CenterContainer/MenuBox" unique_id=504058511]
+custom_minimum_size = Vector2(1, 1)
+custom_maximum_size = Vector2(1, 1)
 layout_mode = 2
-text = "WASD / Ok tuşlarıyla tekneyi hareket ettir.
-60 saniye dolmadan kirliliği sıfırla ve tüm çöpleri topla.
-2. seviyeden itibaren carettaların yanında 2 saniye kalarak kurtar.
-Mağazadan yükseltmeler al ve 5 seviyeyi tamamla."
+theme_override_font_sizes/font_size = 18
+text = "Denizi temizle, yaşamı koru.
+Temiz bir gelecek için kirliliğin kaynağını durdur."
+horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="StartButton" type="Button" parent="CenterContainer/MenuBox" unique_id=1103074080]
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
-text = "Başla"
+text = "Denize Açıl"
