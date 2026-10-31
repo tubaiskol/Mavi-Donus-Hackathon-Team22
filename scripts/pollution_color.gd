@@ -1,9 +1,11 @@
 extends CanvasModulate
 
 const CLEAN_COLOR := Color.WHITE
-const DIRTY_COLOR := Color(0.6, 0.55, 0.35)
+const DIRTY_COLOR := Color(0.58, 0.53, 0.34)
+const SEA_BG_TEX := preload("res://assets/general-game-background.jpeg")
 
 var target_color := CLEAN_COLOR
+var _bg_tex_rect: TextureRect
 
 @onready var background: ColorRect = get_node("../Background")
 
@@ -15,6 +17,17 @@ func _ready() -> void:
 	background.color = Color("#4db6d6")
 	background.z_index = -10
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	if SEA_BG_TEX and background.get_node_or_null("SeaTexture") == null:
+		_bg_tex_rect = TextureRect.new()
+		_bg_tex_rect.name = "SeaTexture"
+		_bg_tex_rect.texture = SEA_BG_TEX
+		_bg_tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		_bg_tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		_bg_tex_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		_bg_tex_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_bg_tex_rect.modulate = Color(1.0, 1.0, 1.0, 0.88)
+		background.add_child(_bg_tex_rect)
 
 	_resize_background()
 	get_viewport().size_changed.connect(_resize_background)
