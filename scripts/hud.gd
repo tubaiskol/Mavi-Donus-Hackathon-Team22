@@ -77,7 +77,7 @@ func _style_hud() -> void:
 	card_sb.set_corner_radius_all(14)
 	stats_panel.add_theme_stylebox_override("panel", card_sb)
 	stats_panel.position = Vector2(12, 10)
-	stats_panel.size = Vector2(356, 218)
+	stats_panel.size = Vector2(356, 184)
 	add_child(stats_panel)
 	move_child(stats_panel, 0)
 
@@ -134,14 +134,19 @@ func _style_hud() -> void:
 	_container_label.add_theme_constant_override("outline_size", 4)
 	stats_box.add_child(_container_label)
 
-	# Sol üst kutu butonları: Tersane & Mağaza + Duraklat
-	var btn_row := HBoxContainer.new()
-	btn_row.add_theme_constant_override("separation", 8)
+	# Sol üst kutu butonu: Sadece Tersane & Mağaza (Tam genişlik)
 	var shop_btn := _make_hud_action_button("🛒 Tersane & Mağaza (M)", _toggle_shop_from_hud, Color(0.12, 0.48, 0.64))
-	var pause_btn := _make_hud_action_button("⏸️ Duraklat (ESC)", _toggle_pause_from_hud, Color(0.18, 0.36, 0.50))
-	btn_row.add_child(shop_btn)
-	btn_row.add_child(pause_btn)
-	stats_box.add_child(btn_row)
+	shop_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	stats_box.add_child(shop_btn)
+
+	# Üst orta duraklat butonu (Ortaya konumlandırıldı)
+	var top_info: VBoxContainer = get_node_or_null("TopInfo") as VBoxContainer
+	if top_info:
+		var pause_btn := _make_hud_action_button("⏸️ Duraklat (ESC)", _toggle_pause_from_hud, Color(0.18, 0.38, 0.52))
+		pause_btn.name = "CenterPauseButton"
+		pause_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		pause_btn.custom_minimum_size = Vector2(170, 32)
+		top_info.add_child(pause_btn)
 
 	# Alt orta bildirim kapsülü
 	_toast_panel = PanelContainer.new()

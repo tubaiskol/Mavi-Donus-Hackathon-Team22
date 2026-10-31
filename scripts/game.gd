@@ -23,7 +23,7 @@ var _dock_pulse := 0.0
 var _dock_title_label: Label
 var _dock_sub_label: Label
 
-var _pause_modal: Control
+var _pause_modal: CanvasLayer
 var _delivery_guidance_timer := 0.0
 var _turtle_guidance_timer := 0.0
 
@@ -68,7 +68,7 @@ func _ready() -> void:
 func _style_top_info() -> void:
 	top_info.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	top_info.offset_top = 10.0
-	top_info.offset_bottom = 96.0
+	top_info.offset_bottom = 120.0
 	top_info.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	top_info.add_theme_constant_override("separation", 4)
 
@@ -343,16 +343,11 @@ func _show_result(win: bool) -> void:
 
 # --- PAUSE (DURAKLATMA) MENÜSÜ ---
 func _build_pause_modal() -> void:
-	_pause_modal = Control.new()
-	_pause_modal.name = "PauseModal"
-	_pause_modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_pause_modal = CanvasLayer.new()
+	_pause_modal.name = "PauseModalLayer"
+	_pause_modal.layer = 15
 	_pause_modal.visible = false
 	_pause_modal.process_mode = Node.PROCESS_MODE_ALWAYS
-	if MENU_FONT:
-		var th := Theme.new()
-		th.default_font = MENU_FONT
-		th.default_font_size = 20
-		_pause_modal.theme = th
 	add_child(_pause_modal)
 
 	var dim := ColorRect.new()
@@ -362,6 +357,11 @@ func _build_pause_modal() -> void:
 
 	var cc := CenterContainer.new()
 	cc.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	if MENU_FONT:
+		var th := Theme.new()
+		th.default_font = MENU_FONT
+		th.default_font_size = 20
+		cc.theme = th
 	_pause_modal.add_child(cc)
 
 	var pc := PanelContainer.new()
