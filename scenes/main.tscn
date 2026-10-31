@@ -6,6 +6,7 @@
 [ext_resource type="Script" uid="uid://cqjj1xadja0lq" path="res://scripts/hud.gd" id="3_sugp2"]
 [ext_resource type="Script" uid="uid://b41fdxguha28w" path="res://scripts/shop.gd" id="5_tbgi4"]
 [ext_resource type="Script" uid="uid://del5860xn0y8i" path="res://scripts/turtle_spawner.gd" id="6_tefeu"]
+[ext_resource type="Script" uid="uid://dq0s4875yyptm" path="res://scripts/pollution_color.gd" id="7_o6xl0"]
 
 [node name="Main" type="Node2D" unique_id=697647994]
 script = ExtResource("1_jyhfs")
@@ -92,3 +93,10 @@ script = ExtResource("6_tefeu")
 
 [node name="Timer" type="Timer" parent="TurtleSpawner" unique_id=1682578355]
 wait_time = 20.0
+
+[node name="Background" type="ColorRect" parent="." unique_id=706586940]
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="CanvasModulate" type="CanvasModulate" parent="." unique_id=766971044]
+script = ExtResource("7_o6xl0")
