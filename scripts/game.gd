@@ -248,11 +248,11 @@ func _check_level_completion() -> void:
 			GameState.show_toast("Deniz temizlendi! Teknendeki %d çöpü Konteynere dök!" % GameState.carried_trash, 3.0)
 		return
 
-	# 2) Kurtarılmayı bekleyen Caretta varsa ve süre varken seviyeyi hemen kapatma!
-	if _has_unrescued_turtle() and time_left > 4.0:
+	# 2) Kurtarılmayı bekleyen Caretta varsa seviye tamamlanamaz!
+	if _has_unrescued_turtle():
 		if _turtle_guidance_timer <= 0.0:
-			_turtle_guidance_timer = 4.0
-			GameState.show_toast("Ağa takılı Caretta var! Onu kurtarmayı unutma!", 3.0)
+			_turtle_guidance_timer = 3.5
+			GameState.show_toast("Ağa takılı Caretta var! Kurtarmadan seviye tamamlanamaz!", 3.0)
 		return
 
 	# Tüm şartlar sağlandı: Seviye başarıyla tamamlandı!
@@ -492,10 +492,10 @@ func _build_result_screen() -> void:
 	_result_msg.add_theme_color_override("font_color", Color(0.20, 0.36, 0.48))
 	vb.add_child(_result_msg)
 
-	var replay_btn := _make_result_button("Tekrar Oyna", _restart_current_level, true)
+	var replay_btn := _make_result_button("🔄 Tekrar Oyna", _restart_current_level, true)
 	vb.add_child(replay_btn)
 
-	var menu_btn := _make_result_button("Ana Menü", _return_to_menu, false)
+	var menu_btn := _make_result_button("🏠 Ana Menüye Dön", _return_to_menu, false)
 	vb.add_child(menu_btn)
 
 
