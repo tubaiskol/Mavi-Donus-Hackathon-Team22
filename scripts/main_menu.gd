@@ -14,6 +14,8 @@ var _fleet_overlay: Control
 var _quests_overlay: Control
 var _quests_list_container: VBoxContainer
 var _level_select_overlay: Control
+var _level_select_resume_btn: Button
+var _level_select_grid: GridContainer
 
 var _music_slider: HSlider
 var _sfx_slider: HSlider
@@ -245,21 +247,21 @@ func _build_level_select_modal(ui_theme: Theme) -> void:
 
 	vb.add_child(_modal_label("⚓ Seviye Seçimi", 36, Color(0.06, 0.24, 0.36)))
 
-	var resume_btn := _modal_button("▶️ Kaldığın Yerden Devam Et (Seviye %d)" % GameState.unlocked_level, func():
+	_level_select_resume_btn = _modal_button("▶️ Kaldığın Yerden Devam Et (Seviye %d)" % GameState.unlocked_level, func():
 		if AudioManager:
 			AudioManager.play_button()
 		_level_select_overlay.hide()
 		_start_level(GameState.unlocked_level)
 	, true)
-	resume_btn.name = "ResumeLevelBtn"
-	vb.add_child(resume_btn)
+	_level_select_resume_btn.name = "ResumeLevelBtn"
+	vb.add_child(_level_select_resume_btn)
 
-	var grid := GridContainer.new()
-	grid.name = "LevelsGrid"
-	grid.columns = 5
-	grid.add_theme_constant_override("h_separation", 10)
-	grid.add_theme_constant_override("v_separation", 10)
-	vb.add_child(grid)
+	_level_select_grid = GridContainer.new()
+	_level_select_grid.name = "LevelsGrid"
+	_level_select_grid.columns = 5
+	_level_select_grid.add_theme_constant_override("h_separation", 10)
+	_level_select_grid.add_theme_constant_override("v_separation", 10)
+	vb.add_child(_level_select_grid)
 
 	vb.add_child(_modal_button("Kapat", func():
 		if AudioManager:
@@ -269,44 +271,41 @@ func _build_level_select_modal(ui_theme: Theme) -> void:
 
 
 func _refresh_level_select_ui() -> void:
-	if _level_select_overlay == null:
+	if _level_select_overlay == null or _level_select_grid == null:
 		return
-	var vb: VBoxContainer = _level_select_overlay.get_node("CenterContainer/PanelContainer/VBoxContainer")
-	var resume_btn: Button = vb.get_node_or_null("ResumeLevelBtn") as Button
-	if resume_btn:
-		resume_btn.text = "▶️ Kaldığın Yerden Devam Et (Seviye %d)" % GameState.unlocked_level
 
-	var grid: GridContainer = vb.get_node_or_null("LevelsGrid") as GridContainer
-	if grid:
-		for c in grid.get_children():
-			c.queue_free()
+	if _level_select_resume_btn:
+		_level_select_resume_btn.text = "▶️ Kaldığın Yerden Devam Et (Seviye %d)" % GameState.unlocked_level
 
-		for lvl in range(1, 6):
-			var b := Button.new()
-			b.custom_minimum_size = Vector2(90, 70)
-			b.add_theme_font_size_override("font_size", 16)
+	for c in _level_select_grid.get_children():
+		c.queue_free()
 
-			var is_unlocked := (lvl <= GameState.unlocked_level)
-			var hist = GameState.level_history.get(str(lvl), {})
-			var is_passed := bool(hist.get("passed", false))
+	for lvl in range(1, 6):
+		var b := Button.new()
+		b.custom_minimum_size = Vector2(90, 70)
+		b.add_theme_font_size_override("font_size", 16)
 
-			if is_passed:
-				b.text = "Seviye %d\n✅ Geçildi" % lvl
-				b.disabled = false
-			elif is_unlocked:
-				b.text = "Seviye %d\n🔓 Açık" % lvl
-				b.disabled = false
-			else:
-				b.text = "Seviye %d\n🔒 Kilitli" % lvl
-				b.disabled = true
+		var is_unlocked := (lvl <= GameState.unlocked_level)
+		var hist = GameState.level_history.get(str(lvl), {})
+		var is_passed := bool(hist.get("passed", false))
 
-			b.pressed.connect(func():
-				if AudioManager:
-					AudioManager.play_button()
-				_level_select_overlay.hide()
-				_start_level(lvl)
-			)
-			grid.add_child(b)
+		if is_passed:
+			b.text = "Seviye %d\n✅ Geçildi" % lvl
+			b.disabled = false
+		elif is_unlocked:
+			b.text = "Seviye %d\n🔓 Açık" % lvl
+			b.disabled = false
+		else:
+			b.text = "Seviye %d\n🔒 Kilitli" % lvl
+			b.disabled = true
+
+		b.pressed.connect(func():
+			if AudioManager:
+				AudioManager.play_button()
+			_level_select_overlay.hide()
+			_start_level(lvl)
+		)
+		_level_select_grid.add_child(b)
 
 
 func _refresh_quests_modal() -> void:
@@ -818,10 +817,12 @@ func _create_modal_card(modal_name: String, ui_theme: Theme) -> VBoxContainer:
 	overlay.add_child(dim)
 
 	var cc := CenterContainer.new()
+	cc.name = "CenterContainer"
 	cc.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	overlay.add_child(cc)
 
 	var pc := PanelContainer.new()
+	pc.name = "PanelContainer"
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.96, 0.99, 1.0, 0.95)
 	sb.border_color = Color(0.18, 0.56, 0.76, 0.85)
@@ -834,6 +835,7 @@ func _create_modal_card(modal_name: String, ui_theme: Theme) -> VBoxContainer:
 	cc.add_child(pc)
 
 	var vb := VBoxContainer.new()
+	vb.name = "VBoxContainer"
 	vb.custom_minimum_size = Vector2(580, 0)
 	vb.add_theme_constant_override("separation", 12)
 	pc.add_child(vb)
