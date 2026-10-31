@@ -5,6 +5,9 @@ const FRICTION := 700.0
 const EDGE_MARGIN := Vector2(24, 24)
 const BASE_PICKUP_RADIUS := 40.0
 
+const RED_BOAT_TEX := preload("res://assets/red_boat.png")
+const BLUE_BOAT_TEX := preload("res://assets/blue_boat.png")
+
 var sprite_outline := PackedVector2Array()
 var pickup_polygon := ConvexPolygonShape2D.new()
 
@@ -14,12 +17,43 @@ var pickup_polygon := ConvexPolygonShape2D.new()
 
 
 func _ready() -> void:
-	sprite_outline = _get_sprite_outline()
-
-	# Her teknenin kendine ait toplama şekli olsun.
 	pickup_shape.shape = pickup_polygon
 	pickup_shape.transform = Transform2D.IDENTITY
+
+	GameState.boat_changed.connect(_on_boat_changed)
+	_apply_boat_texture(GameState.selected_boat)
+
+
+func _on_boat_changed(boat_id: String) -> void:
+	_apply_boat_texture(boat_id)
+
+
+func _apply_boat_texture(boat_id: String) -> void:
+	match boat_id:
+		"blue":
+			sprite.texture = BLUE_BOAT_TEX
+			sprite.scale = Vector2(1.12, 1.12)
+			sprite.self_modulate = Color.WHITE
+		"emerald":
+			sprite.texture = BLUE_BOAT_TEX
+			sprite.scale = Vector2(1.16, 1.16)
+			sprite.self_modulate = Color(0.55, 1.0, 0.72)
+		"gold":
+			sprite.texture = RED_BOAT_TEX
+			sprite.scale = Vector2(1.08, 1.08)
+			sprite.self_modulate = Color(1.0, 0.88, 0.38)
+		"royal":
+			sprite.texture = BLUE_BOAT_TEX
+			sprite.scale = Vector2(1.22, 1.22)
+			sprite.self_modulate = Color(0.86, 0.68, 1.0)
+		_:
+			sprite.texture = RED_BOAT_TEX
+			sprite.scale = Vector2.ONE
+			sprite.self_modulate = Color.WHITE
+
+	sprite_outline = _get_sprite_outline()
 	_update_pickup_shape()
+	queue_redraw()
 
 
 func _physics_process(delta: float) -> void:
@@ -67,6 +101,31 @@ func _physics_process(delta: float) -> void:
 			AudioManager.stop_engine()
 
 	_update_pickup_shape()
+	queue_redraw()
+
+
+func _draw() -> void:
+	# Geniş Ağ veya yeni gemi alındığında su yüzeyinde hafif toplama halkası göster.
+	var extra_radius := maxf(GameState.pickup_radius - BASE_PICKUP_RADIUS, 0.0)
+	if extra_radius > 0.0:
+		var ring_color := Color(0.65, 0.95, 1.0, 0.28) if not GameState.has_solar else Color(0.55, 1.0, 0.78, 0.34)
+		draw_arc(Vector2.ZERO, 95.0 + extra_radius, 0.0, TAU, 48, ring_color, 2.2)
+
+	# Teknenin üzerinde taşınan ve konteynere götürülebilecek çöp sayısını göster
+	if GameState.carried_trash > 0:
+		draw_circle(Vector2(0, -48), 15.0, Color(0.08, 0.38, 0.28, 0.92))
+		draw_arc(Vector2(0, -48), 15.0, 0.0, TAU, 24, Color(0.55, 1.0, 0.75), 2.0)
+		var font := ThemeDB.fallback_font
+		if font:
+			draw_string(
+				font,
+				Vector2(-12, -43),
+				str(GameState.carried_trash),
+				HORIZONTAL_ALIGNMENT_CENTER,
+				24.0,
+				15,
+				Color.WHITE
+			)
 
 
 func _get_sprite_outline() -> PackedVector2Array:
@@ -135,7 +194,7 @@ func _update_pickup_shape() -> void:
 	if points.size() > 1:
 		points.remove_at(points.size() - 1)
 
-	# Geniş Ağ satın alındığında dış sınıra ek mesafe ekle.
+	# Geniş Ağ veya yeni gemi satın alındığında dış sınıra ek mesafe ekle.
 	var extra_radius := maxf(
 		GameState.pickup_radius - BASE_PICKUP_RADIUS,
 		0.0
