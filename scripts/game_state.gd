@@ -18,6 +18,7 @@ var motor_pollution := 0.0
 
 # Henüz üretilmeyen çöpler de dahildir.
 var remaining_trash := 15
+var _pollution_round := 1
 
 var emission_per_sec := 0.50
 var has_solar := false
@@ -38,7 +39,13 @@ var game_over := false
 
 
 func _process(delta: float) -> void:
-	if running and not game_over and not has_solar:
+	if not running or game_over:
+		return
+
+	if _pollution_round != current_round:
+		start_level_pollution(15, 10)
+
+	if not has_solar:
 		motor_pollution += emission_per_sec * delta
 		_update_pollution()
 
@@ -47,6 +54,7 @@ func start_level_pollution(
 	total_trash: int,
 	initial_trash: int
 ) -> void:
+	_pollution_round = current_round
 	remaining_trash = total_trash
 	trash_pollution = initial_trash * INITIAL_TRASH_POLLUTION
 	motor_pollution = 0.0
