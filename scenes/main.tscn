@@ -155,15 +155,15 @@ text = "Mağaza"
 
 [node name="SpeedButton" type="Button" parent="ShopPanel/PanelContainer/VBoxContainer" unique_id=1816568770]
 layout_mode = 2
-text = "Hızlı Motor — 10 coin"
+text = "Mavi Temizlik Gemisi — 10 coin"
 
 [node name="NetButton" type="Button" parent="ShopPanel/PanelContainer/VBoxContainer" unique_id=1029789368]
 layout_mode = 2
-text = "Geniş Ağ — 8 coin"
+text = "Geniş Ağ (Toplama Alanı +25) — 8 coin"
 
 [node name="SolarButton" type="Button" parent="ShopPanel/PanelContainer/VBoxContainer" unique_id=827641630]
 layout_mode = 2
-text = "Güneş Paneli — 15 coin"
+text = "Güneş Paneli (Emisyon Sıfırlanır) — 15 coin"
 
 [node name="ContinueButton" type="Button" parent="ShopPanel/PanelContainer/VBoxContainer" unique_id=1770173260]
 layout_mode = 2
