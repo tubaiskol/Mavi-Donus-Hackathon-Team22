@@ -1,6 +1,8 @@
 extends Control
 
 const MENU_FONT := preload("res://assets/menu_font.ttf")
+const RED_BOAT_TEX := preload("res://assets/red_boat.png")
+const BLUE_BOAT_TEX := preload("res://assets/blue_boat.png")
 
 @onready var start_button: TextureButton = $CenterContainer/MenuBox/ButtonsBox/StartButton
 @onready var help_button: TextureButton = $CenterContainer/MenuBox/ButtonsBox/HelpButton
@@ -10,26 +12,103 @@ var _howto_overlay: Control
 var _settings_overlay: Control
 var _fleet_overlay: Control
 var _quests_overlay: Control
+var _quests_list_container: VBoxContainer
+var _level_select_overlay: Control
 
 var _music_slider: HSlider
 var _sfx_slider: HSlider
 var _music_toggle_box: Button
 var _sfx_toggle_box: Button
 
+# Ana menü üst bilgi kartı (Kalıcı Coin ve Gemi Göstergesi)
+var _top_profile_card: PanelContainer
+var _profile_coins_label: Label
+var _profile_boat_label: Label
+
+# Ana Menü Tersane / Mağaza bileşenleri
+var _menu_shop_coins_label: Label
+var _menu_boat_buttons: Dictionary = {}
+var _menu_net_btn: Button
+var _menu_solar_btn: Button
+var _menu_active_shop_tab := 0
+var _menu_shipyard_box: VBoxContainer
+var _menu_equipment_box: VBoxContainer
+var _menu_tab_shipyard_btn: Button
+var _menu_tab_equip_btn: Button
+
 
 func _ready() -> void:
 	get_tree().paused = false
 	GameState.running = false
-	start_button.pressed.connect(_start_game)
+	GameState.load_game()
+
+	start_button.pressed.connect(_on_start_pressed)
 	help_button.pressed.connect(_open_howto)
 	settings_button.pressed.connect(_open_settings)
+
+	_build_top_profile_card()
 	_style_subtitle_banner()
 	_position_menu_buttons()
 	_build_modals()
 
+	GameState.coins_changed.connect(func(_c): _update_profile_labels())
+	GameState.boat_changed.connect(func(_b): _update_profile_labels())
+	_update_profile_labels()
+
+
+func _build_top_profile_card() -> void:
+	_top_profile_card = PanelContainer.new()
+	_top_profile_card.name = "TopProfileCard"
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.03, 0.18, 0.28, 0.85)
+	sb.border_color = Color(0.96, 0.82, 0.32, 0.80)
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(16)
+	sb.content_margin_left = 18
+	sb.content_margin_right = 18
+	sb.content_margin_top = 10
+	sb.content_margin_bottom = 10
+	_top_profile_card.add_theme_stylebox_override("panel", sb)
+
+	_top_profile_card.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	_top_profile_card.offset_left = -290.0
+	_top_profile_card.offset_top = 16.0
+	_top_profile_card.offset_right = -20.0
+	_top_profile_card.offset_bottom = 80.0
+	add_child(_top_profile_card)
+
+	var vb := VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 2)
+	_top_profile_card.add_child(vb)
+
+	_profile_coins_label = Label.new()
+	_profile_coins_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_profile_coins_label.add_theme_font_size_override("font_size", 22)
+	_profile_coins_label.add_theme_color_override("font_color", Color(1.0, 0.90, 0.38))
+	_profile_coins_label.add_theme_color_override("font_outline_color", Color(0.18, 0.12, 0.02, 0.95))
+	_profile_coins_label.add_theme_constant_override("outline_size", 4)
+	vb.add_child(_profile_coins_label)
+
+	_profile_boat_label = Label.new()
+	_profile_boat_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_profile_boat_label.add_theme_font_size_override("font_size", 14)
+	_profile_boat_label.add_theme_color_override("font_color", Color(0.78, 0.95, 1.0))
+	_profile_boat_label.add_theme_color_override("font_outline_color", Color(0.04, 0.18, 0.28))
+	_profile_boat_label.add_theme_constant_override("outline_size", 4)
+	vb.add_child(_profile_boat_label)
+
+
+func _update_profile_labels() -> void:
+	if _profile_coins_label:
+		_profile_coins_label.text = "💰 %d Coin" % GameState.coins
+	if _profile_boat_label:
+		_profile_boat_label.text = "⚓ %s (Seviye: %d/5)" % [
+			GameState.get_boat_name(),
+			GameState.unlocked_level
+		]
+
 
 func _style_subtitle_banner() -> void:
-	# Ana menüdeki alt açıklama yazısına (InfoLabel) şık deniz temalı UI kartı ekle
 	var menu_box: VBoxContainer = $CenterContainer/MenuBox
 	var info_label: Label = menu_box.get_node_or_null("InfoLabel") as Label
 	if info_label == null:
@@ -60,11 +139,26 @@ func _style_subtitle_banner() -> void:
 	info_label.add_theme_constant_override("outline_size", 5)
 
 
-func _start_game() -> void:
+func _on_start_pressed() -> void:
 	if AudioManager:
 		AudioManager.play_button()
+
+	# Eğer oyuncu 1. seviyeyi geçmişse Seviye Seçimi / Devam Et modalını aç
+	if GameState.unlocked_level > 1 or not GameState.level_history.is_empty():
+		_open_level_select()
+	else:
+		_start_level(1)
+
+
+func _start_level(lvl: int) -> void:
 	start_button.disabled = true
+	GameState.start_level_round(lvl)
 	get_tree().change_scene_to_file("res://scenes/main.tscn")
+
+
+func _open_level_select() -> void:
+	_refresh_level_select_ui()
+	_level_select_overlay.show()
 
 
 func _open_howto() -> void:
@@ -86,6 +180,7 @@ func _open_fleet() -> void:
 	if AudioManager:
 		AudioManager.play_button()
 	if _fleet_overlay:
+		_refresh_menu_shop()
 		_fleet_overlay.show()
 
 
@@ -93,6 +188,7 @@ func _open_quests() -> void:
 	if AudioManager:
 		AudioManager.play_button()
 	if _quests_overlay:
+		_refresh_quests_modal()
 		_quests_overlay.show()
 
 
@@ -102,55 +198,327 @@ func _build_modals() -> void:
 		ui_theme.default_font = MENU_FONT
 		ui_theme.default_font_size = 20
 
-	# --- NASIL OYNANIR MODALI (mavi_donus tarzı) ---
+	# 1) NASIL OYNANIR MODALI
 	var howto_vb := _create_modal_card("HowToModal", ui_theme)
 	_howto_overlay = get_node("HowToModal")
-
 	howto_vb.add_child(_modal_label("Nasıl Oynanır?", 36, Color(0.06, 0.24, 0.36)))
 	howto_vb.add_child(_modal_label("• WASD veya Ok tuşlarıyla temizlik gemisini hareket ettir.", 19))
-	howto_vb.add_child(_modal_label("• Deniz en az %50 kirlilik ve 7-8 varsayılan çöple başlar; suya yeni düşen çöpler kirliliği artırır!", 19))
-	howto_vb.add_child(_modal_label("• Topladığın çöpleri sağ üst köşedeki ♻️ Çöp Konteynerine bırakarak ek coin ve görev ödülleri kazan.", 19))
-	howto_vb.add_child(_modal_label("• 2. seviyeden itibaren ağa takılı Caretta'nın yanında 2 saniye kalarak onu kurtar (+5 Coin, -10 Kirlilik).", 19))
-	howto_vb.add_child(_modal_label("• Oyun içinde sol üstteki 🛒 Mağaza (M) ve 📋 Görevler (G) butonlarıyla istediğin an tersaneye ve görevlere ulaşabilirsin.", 19))
+	howto_vb.add_child(_modal_label("• Deniz en az %50 kirlilik ve 7-8 varsayılan çöple başlar; yeni düşen çöpler kirliliği artırır!", 19))
+	howto_vb.add_child(_modal_label("• Çöpleri toplayıp sağ üstteki Çöp Konteynerine dökerek bonus coin kazan.", 19))
+	howto_vb.add_child(_modal_label("• Caretta'nın yanında 2 saniye kalarak onu kurtar (+5 Coin, -10 Kirlilik).", 19))
+	howto_vb.add_child(_modal_label("• Oyun içinde 'P / ESC' ile duraklatabilir, 'M' ile tersaneye, 'G' ile görevlere gidebilirsin.", 19))
 	howto_vb.add_child(_modal_button("Geri Dön", func():
 		if AudioManager:
 			AudioManager.play_button()
 		_howto_overlay.hide()
 	))
 
-	# --- MAĞAZA & GEMİLER TANITIM MODALI ---
-	var fleet_vb := _create_modal_card("FleetModal", ui_theme)
-	_fleet_overlay = get_node("FleetModal")
-	fleet_vb.add_child(_modal_label("⚓ Mağaza & Gemi Çeşitleri", 34, Color(0.06, 0.24, 0.36)))
-	fleet_vb.add_child(_modal_label("Oyun sırasında sol üstteki '🛒 Mağaza (M)' butonuyla veya tur sonlarında satın alabilirsin:", 18, Color(0.18, 0.36, 0.48)))
-	for boat_id in GameState.BOAT_ORDER:
-		var info: Dictionary = GameState.BOAT_CATALOG[boat_id]
-		var cost_txt := "Başlangıç Gemisi" if int(info["cost"]) == 0 else "%d Coin" % int(info["cost"])
-		fleet_vb.add_child(_modal_label("🚤 %s (%s) — %s" % [info["name"], cost_txt, info["desc"]], 18))
-	fleet_vb.add_child(_modal_label("🛠️ Geniş Ağ (8 Coin): Toplama alanı +25  |  ☀️ Güneş Paneli (15 Coin): Emisyonu sıfırlar!", 18, Color(0.10, 0.46, 0.36)))
-	fleet_vb.add_child(_modal_button("Kapat", func():
-		if AudioManager:
-			AudioManager.play_button()
-		_fleet_overlay.hide()
-	))
+	# 2) SEVİYE SEÇİMİ / DEVAM ET MODALI (Kaldığı yerden başlama)
+	_build_level_select_modal(ui_theme)
 
-	# --- GÖREVLER MODALI ---
+	# 3) ANA MENÜ İNTERAKTİF TERSANE & MAĞAZA (Doğrudan buradan satın alma yapılabilir!)
+	_build_interactive_menu_shop(ui_theme)
+
+	# 4) GÖREVLER MODALI
 	var quests_vb := _create_modal_card("QuestsPreviewModal", ui_theme)
 	_quests_overlay = get_node("QuestsPreviewModal")
 	quests_vb.add_child(_modal_label("📋 Deniz Temizliği Görevleri", 34, Color(0.06, 0.24, 0.36)))
-	quests_vb.add_child(_modal_label("Oyun içinde bu görevleri tamamlayarak ekstra coin ödülleri kazanırsın:", 18, Color(0.18, 0.36, 0.48)))
-	for q in GameState.quests:
-		quests_vb.add_child(_modal_label("🎯 %s  —  Ödül: +%d Coin" % [q["title"], int(q["reward"])], 18))
+	quests_vb.add_child(_modal_label("Görevleri tamamlayarak ekstra coin kazan:", 18, Color(0.18, 0.36, 0.48)))
+	
+	_quests_list_container = VBoxContainer.new()
+	_quests_list_container.add_theme_constant_override("separation", 10)
+	quests_vb.add_child(_quests_list_container)
+
 	quests_vb.add_child(_modal_button("Kapat", func():
 		if AudioManager:
 			AudioManager.play_button()
 		_quests_overlay.hide()
 	))
 
-	# --- AYARLAR MODALI (Referans görseldeki OPTIONS tarzı) ---
+	# 5) AYARLAR MODALI (Kısa-kalın ses barı, ful açık/kapalı butonları, ilerleme sıfırlama)
 	_build_sweet_settings_modal(ui_theme)
 
 
+func _build_level_select_modal(ui_theme: Theme) -> void:
+	var vb := _create_modal_card("LevelSelectModal", ui_theme)
+	_level_select_overlay = get_node("LevelSelectModal")
+
+	vb.add_child(_modal_label("⚓ Seviye Seçimi", 36, Color(0.06, 0.24, 0.36)))
+
+	var resume_btn := _modal_button("▶️ Kaldığın Yerden Devam Et (Seviye %d)" % GameState.unlocked_level, func():
+		if AudioManager:
+			AudioManager.play_button()
+		_level_select_overlay.hide()
+		_start_level(GameState.unlocked_level)
+	, true)
+	resume_btn.name = "ResumeLevelBtn"
+	vb.add_child(resume_btn)
+
+	var grid := GridContainer.new()
+	grid.name = "LevelsGrid"
+	grid.columns = 5
+	grid.add_theme_constant_override("h_separation", 10)
+	grid.add_theme_constant_override("v_separation", 10)
+	vb.add_child(grid)
+
+	vb.add_child(_modal_button("Kapat", func():
+		if AudioManager:
+			AudioManager.play_button()
+		_level_select_overlay.hide()
+	, false))
+
+
+func _refresh_level_select_ui() -> void:
+	if _level_select_overlay == null:
+		return
+	var vb: VBoxContainer = _level_select_overlay.get_node("CenterContainer/PanelContainer/VBoxContainer")
+	var resume_btn: Button = vb.get_node_or_null("ResumeLevelBtn") as Button
+	if resume_btn:
+		resume_btn.text = "▶️ Kaldığın Yerden Devam Et (Seviye %d)" % GameState.unlocked_level
+
+	var grid: GridContainer = vb.get_node_or_null("LevelsGrid") as GridContainer
+	if grid:
+		for c in grid.get_children():
+			c.queue_free()
+
+		for lvl in range(1, 6):
+			var b := Button.new()
+			b.custom_minimum_size = Vector2(90, 70)
+			b.add_theme_font_size_override("font_size", 16)
+
+			var is_unlocked := (lvl <= GameState.unlocked_level)
+			var hist = GameState.level_history.get(str(lvl), {})
+			var is_passed := bool(hist.get("passed", false))
+
+			if is_passed:
+				b.text = "Seviye %d\n✅ Geçildi" % lvl
+				b.disabled = false
+			elif is_unlocked:
+				b.text = "Seviye %d\n🔓 Açık" % lvl
+				b.disabled = false
+			else:
+				b.text = "Seviye %d\n🔒 Kilitli" % lvl
+				b.disabled = true
+
+			b.pressed.connect(func():
+				if AudioManager:
+					AudioManager.play_button()
+				_level_select_overlay.hide()
+				_start_level(lvl)
+			)
+			grid.add_child(b)
+
+
+func _refresh_quests_modal() -> void:
+	if _quests_list_container == null:
+		return
+	for c in _quests_list_container.get_children():
+		c.queue_free()
+
+	for q in GameState.quests:
+		var is_comp: bool = bool(q.get("completed", false))
+		var progress: int = int(q.get("progress", 0))
+		var target: int = int(q.get("target", 1))
+		var title: String = str(q.get("title", ""))
+		var reward: int = int(q.get("reward", 0))
+
+		var status_str := "✅ Tamamlandı (+%d Coin)" % reward if is_comp else "⏳ %d / %d (+%d Coin)" % [progress, target, reward]
+		var col := Color(0.12, 0.55, 0.25) if is_comp else Color(0.15, 0.25, 0.35)
+
+		var lbl := Label.new()
+		lbl.text = "🎯 %s\n   Durum: %s" % [title, status_str]
+		lbl.add_theme_font_size_override("font_size", 17)
+		lbl.add_theme_color_override("font_color", col)
+		_quests_list_container.add_child(lbl)
+
+
+# --- ANA MENÜ İNTERAKTİF TERSANE & MAĞAZA ---
+func _build_interactive_menu_shop(ui_theme: Theme) -> void:
+	var vb := _create_modal_card("InteractiveMenuShopModal", ui_theme)
+	_fleet_overlay = get_node("InteractiveMenuShopModal")
+	vb.custom_minimum_size = Vector2(740, 0)
+
+	vb.add_child(_modal_label("⚓ Tersane & Mağaza", 36, Color(0.06, 0.24, 0.36)))
+
+	_menu_shop_coins_label = _modal_label("Coin: %d" % GameState.coins, 24, Color(0.78, 0.52, 0.06))
+	vb.add_child(_menu_shop_coins_label)
+
+	# Sekmeler
+	var tabs_row := HBoxContainer.new()
+	tabs_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	tabs_row.add_theme_constant_override("separation", 16)
+	vb.add_child(tabs_row)
+
+	_menu_tab_shipyard_btn = Button.new()
+	_menu_tab_shipyard_btn.text = "⚓ Tersane (Gemiler)"
+	_menu_tab_shipyard_btn.custom_minimum_size = Vector2(230, 44)
+	_menu_tab_shipyard_btn.add_theme_font_size_override("font_size", 18)
+	_menu_tab_shipyard_btn.pressed.connect(_switch_menu_shop_tab.bind(0))
+	tabs_row.add_child(_menu_tab_shipyard_btn)
+
+	_menu_tab_equip_btn = Button.new()
+	_menu_tab_equip_btn.text = "🛠️ Mağaza (Ekipman)"
+	_menu_tab_equip_btn.custom_minimum_size = Vector2(230, 44)
+	_menu_tab_equip_btn.add_theme_font_size_override("font_size", 18)
+	_menu_tab_equip_btn.pressed.connect(_switch_menu_shop_tab.bind(1))
+	tabs_row.add_child(_menu_tab_equip_btn)
+
+	# Tersane Box
+	_menu_shipyard_box = VBoxContainer.new()
+	_menu_shipyard_box.add_theme_constant_override("separation", 8)
+	vb.add_child(_menu_shipyard_box)
+
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 10)
+	grid.add_theme_constant_override("v_separation", 8)
+	_menu_shipyard_box.add_child(grid)
+
+	var red_icon := _make_boat_icon(RED_BOAT_TEX, Rect2i(360, 215, 250, 140), Color.WHITE)
+	var blue_icon := _make_boat_icon(BLUE_BOAT_TEX, Rect2i(190, 260, 230, 140), Color.WHITE)
+	var emerald_icon := _make_boat_icon(BLUE_BOAT_TEX, Rect2i(190, 260, 230, 140), Color(0.55, 1.0, 0.72))
+	var gold_icon := _make_boat_icon(RED_BOAT_TEX, Rect2i(360, 215, 250, 140), Color(1.0, 0.88, 0.38))
+	var royal_icon := _make_boat_icon(BLUE_BOAT_TEX, Rect2i(190, 260, 230, 140), Color(0.86, 0.68, 1.0))
+
+	var icons := {
+		"red": red_icon,
+		"blue": blue_icon,
+		"emerald": emerald_icon,
+		"gold": gold_icon,
+		"royal": royal_icon
+	}
+
+	for boat_id in GameState.BOAT_ORDER:
+		var b := Button.new()
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.icon = icons.get(boat_id)
+		b.expand_icon = false
+		b.custom_minimum_size = Vector2(330, 50)
+		b.add_theme_font_size_override("font_size", 14)
+		b.pressed.connect(_on_menu_boat_buy_pressed.bind(boat_id))
+		grid.add_child(b)
+		_menu_boat_buttons[boat_id] = b
+
+	# Ekipman Box
+	_menu_equipment_box = VBoxContainer.new()
+	_menu_equipment_box.add_theme_constant_override("separation", 12)
+	vb.add_child(_menu_equipment_box)
+
+	_menu_net_btn = Button.new()
+	_menu_net_btn.custom_minimum_size = Vector2(0, 54)
+	_menu_net_btn.add_theme_font_size_override("font_size", 18)
+	_menu_net_btn.pressed.connect(func():
+		if GameState.buy_net():
+			if AudioManager:
+				AudioManager.play_buy()
+			_refresh_menu_shop()
+	)
+	_menu_equipment_box.add_child(_menu_net_btn)
+
+	_menu_solar_btn = Button.new()
+	_menu_solar_btn.custom_minimum_size = Vector2(0, 54)
+	_menu_solar_btn.add_theme_font_size_override("font_size", 18)
+	_menu_solar_btn.pressed.connect(func():
+		if GameState.buy_solar():
+			if AudioManager:
+				AudioManager.play_solar()
+			_refresh_menu_shop()
+	)
+	_menu_equipment_box.add_child(_menu_solar_btn)
+
+	vb.add_child(_modal_button("Kapat", func():
+		if AudioManager:
+			AudioManager.play_button()
+		_fleet_overlay.hide()
+	))
+
+	_switch_menu_shop_tab(0)
+
+
+func _switch_menu_shop_tab(idx: int) -> void:
+	_menu_active_shop_tab = idx
+	_menu_shipyard_box.visible = (_menu_active_shop_tab == 0)
+	_menu_equipment_box.visible = (_menu_active_shop_tab == 1)
+
+
+func _on_menu_boat_buy_pressed(boat_id: String) -> void:
+	var was_owned := GameState.is_boat_owned(boat_id)
+	if GameState.buy_or_select_boat(boat_id):
+		if AudioManager:
+			if was_owned:
+				AudioManager.play_button()
+			else:
+				AudioManager.play_buy()
+		_refresh_menu_shop()
+
+
+func _refresh_menu_shop() -> void:
+	if _menu_shop_coins_label:
+		_menu_shop_coins_label.text = "💰 Toplam Coin: %d" % GameState.coins
+
+	for boat_id: String in _menu_boat_buttons:
+		var btn: Button = _menu_boat_buttons[boat_id]
+		var info: Dictionary = GameState.BOAT_CATALOG[boat_id]
+		var b_name: String = info["name"]
+		var cost: int = int(info["cost"])
+		var r_bonus: int = int(info["radius_bonus"])
+		var d_bonus: int = int(info["delivery_bonus"])
+		var owned: bool = GameState.is_boat_owned(boat_id)
+		var is_active: bool = (GameState.selected_boat == boat_id)
+
+		var stat_txt := ""
+		if r_bonus > 0:
+			stat_txt = " (+%d Ağ, +%d Konteyner Coin)" % [r_bonus, d_bonus]
+
+		if is_active:
+			btn.text = "%s%s\n[Aktif Gemi]" % [b_name, stat_txt]
+			btn.disabled = true
+		elif owned:
+			btn.text = "%s%s\n[Sahipsin — Seç]" % [b_name, stat_txt]
+			btn.disabled = false
+		else:
+			btn.text = "%s%s\nSatın Al — %d Coin" % [b_name, stat_txt, cost]
+			btn.disabled = (GameState.coins < cost)
+
+	if _menu_net_btn:
+		if GameState.has_wide_net:
+			_menu_net_btn.text = "Geniş Ağ (Toplama Alanı +25)  —  Alındı"
+			_menu_net_btn.disabled = true
+		else:
+			_menu_net_btn.text = "Geniş Ağ (Toplama Alanı +25)  —  8 coin"
+			_menu_net_btn.disabled = (GameState.coins < 8)
+
+	if _menu_solar_btn:
+		if GameState.has_solar:
+			_menu_solar_btn.text = "Güneş Paneli (Emisyon Sıfırlanır)  —  Alındı"
+			_menu_solar_btn.disabled = true
+		else:
+			_menu_solar_btn.text = "Güneş Paneli (Emisyon Sıfırlanır)  —  15 coin"
+			_menu_solar_btn.disabled = (GameState.coins < 15)
+
+	_update_profile_labels()
+
+
+func _make_boat_icon(tex: Texture2D, region: Rect2i, tint: Color) -> Texture2D:
+	if tex == null:
+		return null
+	var img := tex.get_image()
+	if img == null:
+		return null
+	if img.is_compressed():
+		img.decompress()
+	var cropped := img.get_region(region)
+	cropped.resize(54, 34, Image.INTERPOLATE_LANCZOS)
+	if tint != Color.WHITE:
+		for y in cropped.get_height():
+			for x in cropped.get_width():
+				var c := cropped.get_pixel(x, y)
+				if c.a > 0.01:
+					cropped.set_pixel(x, y, Color(c.r * tint.r, c.g * tint.g, c.b * tint.b, c.a))
+	return ImageTexture.create_from_image(cropped)
+
+
+# --- AYARLAR MODALI ---
 func _build_sweet_settings_modal(ui_theme: Theme) -> void:
 	_settings_overlay = Control.new()
 	_settings_overlay.name = "SettingsModal"
@@ -168,7 +536,6 @@ func _build_sweet_settings_modal(ui_theme: Theme) -> void:
 	cc.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_settings_overlay.add_child(cc)
 
-	# Mavi-turkuaz parlak çerçeveli ana kart (OPTIONS görseli tarzı)
 	var card := PanelContainer.new()
 	var card_sb := StyleBoxFlat.new()
 	card_sb.bg_color = Color(0.24, 0.76, 0.94, 0.97)
@@ -186,10 +553,9 @@ func _build_sweet_settings_modal(ui_theme: Theme) -> void:
 
 	var vb := VBoxContainer.new()
 	vb.custom_minimum_size = Vector2(460, 0)
-	vb.add_theme_constant_override("separation", 22)
+	vb.add_theme_constant_override("separation", 18)
 	card.add_child(vb)
 
-	# Üst Başlık Satırı: Büyük sarı-turuncu konturlu "AYARLAR" + sağ üst "✖" butonu
 	var header_hb := HBoxContainer.new()
 	header_hb.alignment = BoxContainer.ALIGNMENT_CENTER
 	vb.add_child(header_hb)
@@ -202,7 +568,7 @@ func _build_sweet_settings_modal(ui_theme: Theme) -> void:
 	title_lbl.text = "AYARLAR"
 	title_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title_lbl.add_theme_font_size_override("font_size", 46)
+	title_lbl.add_theme_font_size_override("font_size", 44)
 	title_lbl.add_theme_color_override("font_color", Color(1.0, 0.84, 0.20))
 	title_lbl.add_theme_color_override("font_outline_color", Color(0.56, 0.24, 0.05, 1.0))
 	title_lbl.add_theme_constant_override("outline_size", 10)
@@ -228,7 +594,7 @@ func _build_sweet_settings_modal(ui_theme: Theme) -> void:
 	)
 	header_hb.add_child(close_x_btn)
 
-	# 1. Satır: 🎵 Müzik (Büyük yazı + kalın kısa bar + sağda kare ful açık/kapalı kutusu)
+	# Müzik satırı
 	var music_row := _create_audio_control_row(
 		"🎵 Müzik",
 		func(val: float):
@@ -246,7 +612,7 @@ func _build_sweet_settings_modal(ui_theme: Theme) -> void:
 	_music_toggle_box = music_row["box"]
 	vb.add_child(music_row["container"])
 
-	# 2. Satır: 🔊 Ses (Büyük yazı + kalın kısa bar + sağda kare ful açık/kapalı kutusu)
+	# Ses satırı
 	var sfx_row := _create_audio_control_row(
 		"🔊 Ses",
 		func(val: float):
@@ -265,15 +631,30 @@ func _build_sweet_settings_modal(ui_theme: Theme) -> void:
 	_sfx_toggle_box = sfx_row["box"]
 	vb.add_child(sfx_row["container"])
 
-	# Alt Buton: Görseldeki parlak turuncu-sarı "Quit / Tamam" butonu tarzında
+	# Oyun İlerlemesini Sıfırla (Reset Save) butonu
+	var reset_save_btn := Button.new()
+	reset_save_btn.text = "🗑️ İlerlemeyi ve Kaydı Sıfırla"
+	reset_save_btn.custom_minimum_size = Vector2(0, 42)
+	reset_save_btn.add_theme_font_size_override("font_size", 16)
+	reset_save_btn.add_theme_color_override("font_color", Color(0.9, 0.2, 0.2))
+	reset_save_btn.pressed.connect(func():
+		GameState.reset_all_data()
+		_refresh_menu_shop()
+		_refresh_settings_ui()
+		_update_profile_labels()
+		if AudioManager:
+			AudioManager.play_button()
+	)
+	vb.add_child(reset_save_btn)
+
 	var bottom_center := HBoxContainer.new()
 	bottom_center.alignment = BoxContainer.ALIGNMENT_CENTER
 	vb.add_child(bottom_center)
 
 	var ok_btn := Button.new()
 	ok_btn.text = "TAMAM"
-	ok_btn.custom_minimum_size = Vector2(210, 56)
-	ok_btn.add_theme_font_size_override("font_size", 28)
+	ok_btn.custom_minimum_size = Vector2(210, 52)
+	ok_btn.add_theme_font_size_override("font_size", 26)
 	ok_btn.add_theme_color_override("font_color", Color(1.0, 0.98, 0.85))
 	ok_btn.add_theme_color_override("font_outline_color", Color(0.55, 0.22, 0.04))
 	ok_btn.add_theme_constant_override("outline_size", 6)
@@ -282,7 +663,7 @@ func _build_sweet_settings_modal(ui_theme: Theme) -> void:
 	ok_normal.bg_color = Color(0.98, 0.62, 0.14)
 	ok_normal.border_color = Color(1.0, 0.94, 0.68)
 	ok_normal.set_border_width_all(3)
-	ok_normal.set_corner_radius_all(28)
+	ok_normal.set_corner_radius_all(26)
 	ok_normal.shadow_color = Color(0.45, 0.18, 0.02, 0.45)
 	ok_normal.shadow_size = 8
 
@@ -310,18 +691,16 @@ func _create_audio_control_row(label_text: String, on_slide: Callable, on_box_to
 	hb.alignment = BoxContainer.ALIGNMENT_CENTER
 	hb.add_theme_constant_override("separation", 14)
 
-	# Sol: Daha büyük ve kalın ses etiketi
 	var lbl := Label.new()
 	lbl.text = label_text
 	lbl.custom_minimum_size = Vector2(145, 44)
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	lbl.add_theme_font_size_override("font_size", 28)
+	lbl.add_theme_font_size_override("font_size", 26)
 	lbl.add_theme_color_override("font_color", Color(0.04, 0.26, 0.48))
 	lbl.add_theme_color_override("font_outline_color", Color(0.88, 0.98, 1.0, 0.90))
 	lbl.add_theme_constant_override("outline_size", 5)
 	hb.add_child(lbl)
 
-	# Orta: Daha kalın ve daha kısa slider barı (turuncu-kırmızı dolgu + beyaz || tutamaç)
 	var slider := HSlider.new()
 	slider.min_value = 0.0
 	slider.max_value = 100.0
@@ -359,7 +738,6 @@ func _create_audio_control_row(label_text: String, on_slide: Callable, on_box_to
 	slider.value_changed.connect(on_slide)
 	hb.add_child(slider)
 
-	# En sağ: Kare kutu kısayolu (Ful Açık / Ful Kapalı)
 	var box_btn := Button.new()
 	box_btn.custom_minimum_size = Vector2(46, 46)
 	box_btn.tooltip_text = "Kısayol: Tam Açık (100%) / Tam Kapalı (0%)"
@@ -399,7 +777,6 @@ func _style_shortcut_box(box_btn: Button, is_open: bool) -> void:
 
 
 func _make_pill_grabber_texture(highlight: bool) -> ImageTexture:
-	# Görseldeki beyaz kapsül üzerinde mavi "||" çizgili tutamaç
 	var w := 28
 	var h := 36
 	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
@@ -546,8 +923,7 @@ func _position_menu_buttons() -> void:
 		125
 	)
 
-	# Ana ekranda Mağaza & Gemiler ve Görevler baloncuk butonları
-	var shop_btn := _create_extra_bubble_button("Mağaza &\nGemiler", Vector2(55, 225), 130, _open_fleet)
+	var shop_btn := _create_extra_bubble_button("Tersane &\nMağaza", Vector2(55, 225), 130, _open_fleet)
 	box.add_child(shop_btn)
 
 	var quests_btn := _create_extra_bubble_button("Görevler", Vector2(275, 225), 130, _open_quests)
@@ -576,7 +952,6 @@ func _set_bubble_rect(
 	local_position: Vector2,
 	diameter: float
 ) -> void:
-	# Assetin büyük piksel boyutu butonu büyütmesin.
 	button.ignore_texture_size = true
 	button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 	button.texture_normal = _make_oval_texture(
