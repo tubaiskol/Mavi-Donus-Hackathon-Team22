@@ -61,3 +61,5 @@ func _resize_background() -> void:
 	var screen := get_viewport_rect()
 	background.position = screen.position
 	background.size = screen.size
+	if _bg_tex_rect:
+		_bg_tex_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

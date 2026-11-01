@@ -45,6 +45,7 @@ func _ready() -> void:
 
 	continue_button.disabled = true
 	_refresh(GameState.coins)
+	get_viewport().size_changed.connect(_on_viewport_resized)
 
 
 func _build_modern_shop_ui() -> void:
@@ -345,7 +346,9 @@ func _center_panel() -> void:
 	panel.position = screen_center - panel.size * 0.5
 
 
-
+func _on_viewport_resized() -> void:
+	if visible:
+		_center_panel()
 
 
 func _on_boat_button_pressed(boat_id: String) -> void:
