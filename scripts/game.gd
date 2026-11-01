@@ -254,6 +254,16 @@ func _process(delta: float) -> void:
 				_try_deliver_trash()
 				break
 
+	# Teslimat bu karede bölümü tamamlamış olabilir.
+	if not GameState.running or GameState.game_over:
+		return
+
+	# Deniz temizlenince dönüş ve kalan Caretta kurtarmaları için süre dolmaz.
+	if spawner.get_remaining_trash_count() == 0:
+		_update_time_label()
+		_check_level_completion()
+		return
+
 	time_left = maxf(time_left - delta, 0.0)
 	_update_time_label()
 
@@ -276,9 +286,6 @@ func _has_unrescued_turtle() -> bool:
 
 func _check_level_completion() -> void:
 	if not GameState.running or GameState.game_over:
-		return
-
-	if time_left <= 0.0:
 		return
 
 	# Denizde henüz toplanmamış veya spawn olmamış çöp varsa seviyeyi bitirme
@@ -345,6 +352,10 @@ func _start_next_level() -> void:
 
 func _update_time_label() -> void:
 	level_label.text = "TUR %d / %d" % [GameState.current_round, TOTAL_LEVELS]
+	if GameState.running and spawner.get_remaining_trash_count() == 0:
+		time_label.text = "Konteynere teslim et" if GameState.carried_trash > 0 else "Carettayı kurtar"
+		time_label.add_theme_color_override("font_color", Color(0.58, 1.0, 0.72))
+		return
 	time_label.text = "%d sn" % ceili(time_left)
 	if time_left <= 10.0:
 		time_label.add_theme_color_override("font_color", Color(1.0, 0.42, 0.38))
