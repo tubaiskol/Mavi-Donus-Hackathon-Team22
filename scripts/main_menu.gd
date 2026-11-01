@@ -29,14 +29,16 @@ var _profile_boat_label: Label
 
 # Ana Menü Tersane / Mağaza bileşenleri
 var _menu_shop_coins_label: Label
+var _menu_shop_title: Label
 var _menu_boat_buttons: Dictionary = {}
 var _menu_net_btn: Button
 var _menu_solar_btn: Button
-var _menu_active_shop_tab := 0
+var _menu_active_shop_tab := -1
+var _menu_shop_categories: VBoxContainer
+var _menu_shop_back: Button
+const SHOP_CATEGORIES := ["Gemiler", "Denizaltılar", "Gemi Ekipmanları", "Dalış Ekipmanları"]
 var _menu_shipyard_box: VBoxContainer
 var _menu_equipment_box: VBoxContainer
-var _menu_tab_shipyard_btn: Button
-var _menu_tab_equip_btn: Button
 
 
 func _ready() -> void:
@@ -182,7 +184,7 @@ func _open_fleet() -> void:
 	if AudioManager:
 		AudioManager.play_button()
 	if _fleet_overlay:
-		_refresh_menu_shop()
+		_switch_menu_shop_tab(-1)
 		_fleet_overlay.show()
 
 
@@ -339,30 +341,26 @@ func _build_interactive_menu_shop(ui_theme: Theme) -> void:
 	_fleet_overlay = get_node("InteractiveMenuShopModal")
 	vb.custom_minimum_size = Vector2(740, 0)
 
-	vb.add_child(_modal_label("⚓ Tersane & Mağaza", 36, Color(0.06, 0.24, 0.36)))
+	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", 12)
+	vb.add_child(header)
+	_menu_shop_back = _modal_button("← Geri", _switch_menu_shop_tab.bind(-1))
+	_menu_shop_back.custom_minimum_size = Vector2(100, 44)
+	header.add_child(_menu_shop_back)
+	_menu_shop_title = _modal_label("⚓ Tersane & Mağaza", 32, Color(0.06, 0.24, 0.36))
+	_menu_shop_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(_menu_shop_title)
 
 	_menu_shop_coins_label = _modal_label("Coin: %d" % GameState.coins, 24, Color(0.78, 0.52, 0.06))
 	vb.add_child(_menu_shop_coins_label)
 
-	# Sekmeler
-	var tabs_row := HBoxContainer.new()
-	tabs_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	tabs_row.add_theme_constant_override("separation", 16)
-	vb.add_child(tabs_row)
-
-	_menu_tab_shipyard_btn = Button.new()
-	_menu_tab_shipyard_btn.text = "⚓ Tersane (Gemiler)"
-	_menu_tab_shipyard_btn.custom_minimum_size = Vector2(230, 44)
-	_menu_tab_shipyard_btn.add_theme_font_size_override("font_size", 18)
-	_menu_tab_shipyard_btn.pressed.connect(_switch_menu_shop_tab.bind(0))
-	tabs_row.add_child(_menu_tab_shipyard_btn)
-
-	_menu_tab_equip_btn = Button.new()
-	_menu_tab_equip_btn.text = "🛠️ Mağaza (Ekipman)"
-	_menu_tab_equip_btn.custom_minimum_size = Vector2(230, 44)
-	_menu_tab_equip_btn.add_theme_font_size_override("font_size", 18)
-	_menu_tab_equip_btn.pressed.connect(_switch_menu_shop_tab.bind(1))
-	tabs_row.add_child(_menu_tab_equip_btn)
+	_menu_shop_categories = VBoxContainer.new()
+	_menu_shop_categories.add_theme_constant_override("separation", 10)
+	vb.add_child(_menu_shop_categories)
+	for category in range(SHOP_CATEGORIES.size()):
+		var button := _modal_button(SHOP_CATEGORIES[category], _switch_menu_shop_tab.bind(category))
+		button.custom_minimum_size = Vector2(0, 52)
+		_menu_shop_categories.add_child(button)
 
 	# Tersane Box
 	_menu_shipyard_box = VBoxContainer.new()
@@ -400,7 +398,7 @@ func _build_interactive_menu_shop(ui_theme: Theme) -> void:
 	_menu_net_btn.custom_minimum_size = Vector2(0, 54)
 	_menu_net_btn.add_theme_font_size_override("font_size", 18)
 	_menu_net_btn.pressed.connect(func():
-		if GameState.buy_net():
+		if GameState.buy_net(1 if _menu_active_shop_tab == 3 else 0):
 			if AudioManager:
 				AudioManager.play_buy()
 			_refresh_menu_shop()
@@ -411,7 +409,7 @@ func _build_interactive_menu_shop(ui_theme: Theme) -> void:
 	_menu_solar_btn.custom_minimum_size = Vector2(0, 54)
 	_menu_solar_btn.add_theme_font_size_override("font_size", 18)
 	_menu_solar_btn.pressed.connect(func():
-		if GameState.buy_solar():
+		if GameState.buy_solar(1 if _menu_active_shop_tab == 3 else 0):
 			if AudioManager:
 				AudioManager.play_solar()
 			_refresh_menu_shop()
@@ -424,18 +422,21 @@ func _build_interactive_menu_shop(ui_theme: Theme) -> void:
 		_fleet_overlay.hide()
 	))
 
-	_switch_menu_shop_tab(0)
+	_switch_menu_shop_tab(-1)
 
 
 func _switch_menu_shop_tab(idx: int) -> void:
 	_menu_active_shop_tab = idx
-	_menu_shipyard_box.visible = (_menu_active_shop_tab == 0)
-	_menu_equipment_box.visible = (_menu_active_shop_tab == 1)
+	_menu_shop_categories.visible = idx == -1
+	_menu_shop_back.visible = idx != -1
+	_menu_shipyard_box.visible = idx in [0, 1]
+	_menu_equipment_box.visible = idx in [2, 3]
+	_refresh_menu_shop()
 
 
 func _on_menu_boat_buy_pressed(boat_id: String) -> void:
 	var was_owned := GameState.is_boat_owned(boat_id)
-	if GameState.buy_or_select_boat(boat_id):
+	if GameState.buy_or_select_boat(boat_id, true):
 		if AudioManager:
 			if was_owned:
 				AudioManager.play_button()
@@ -445,11 +446,14 @@ func _on_menu_boat_buy_pressed(boat_id: String) -> void:
 
 
 func _refresh_menu_shop() -> void:
+	var underwater := _menu_active_shop_tab in [1, 3]
+	_menu_shop_title.text = "⚓ Tersane & Mağaza" if _menu_active_shop_tab == -1 else SHOP_CATEGORIES[_menu_active_shop_tab]
 	if _menu_shop_coins_label:
 		_menu_shop_coins_label.text = "💰 Toplam Coin: %d" % GameState.coins
 
 	for boat_id: String in _menu_boat_buttons:
 		var btn: Button = _menu_boat_buttons[boat_id]
+		btn.visible = (boat_id in ["sub_basic", "sub_fat", "sub_green"]) == underwater
 		var info: Dictionary = GameState.BOAT_CATALOG[boat_id]
 		var b_name: String = info["name"]
 		var cost: int = int(info["cost"])
@@ -460,32 +464,34 @@ func _refresh_menu_shop() -> void:
 
 		var stat_txt := ""
 		if r_bonus > 0:
-			stat_txt = " (+%d Ağ, +%d Konteyner Coin)" % [r_bonus, d_bonus]
+			stat_txt = " (+%d Alan, +%d Konteyner Coin)" % [r_bonus, d_bonus]
 
 		if is_active:
-			btn.text = "%s%s\n[Aktif Gemi]" % [b_name, stat_txt]
+			btn.text = "%s%s\n[Aktif %s]" % [b_name, stat_txt, "Denizaltı" if underwater else "Gemi"]
 			btn.disabled = true
 		elif owned:
-			btn.text = "%s%s\n[Sahipsin — Seç]" % [b_name, stat_txt]
-			btn.disabled = false
+			btn.text = "%s%s\n[%s]" % [b_name, stat_txt, "Sahipsin — Seç" if GameState.is_vehicle_available(boat_id) else "Sahipsin — İlgili bölümde kullanılır"]
+			btn.disabled = not GameState.is_vehicle_available(boat_id)
 		else:
 			btn.text = "%s%s\nSatın Al — %d Coin" % [b_name, stat_txt, cost]
 			btn.disabled = (GameState.coins < cost)
 
 	if _menu_net_btn:
-		if GameState.has_wide_net:
-			_menu_net_btn.text = "Geniş Ağ (Toplama Alanı +25)  —  Alındı"
+		var equipment := "Dalgıç Toplama Aparatı" if underwater else "Geniş Ağ"
+		if (GameState.has_dive_collector if underwater else GameState.has_wide_net):
+			_menu_net_btn.text = "%s (Toplama Alanı +25)  —  Alındı" % equipment
 			_menu_net_btn.disabled = true
 		else:
-			_menu_net_btn.text = "Geniş Ağ (Toplama Alanı +25)  —  8 coin"
+			_menu_net_btn.text = "%s (Toplama Alanı +25)  —  8 coin" % equipment
 			_menu_net_btn.disabled = (GameState.coins < 8)
 
 	if _menu_solar_btn:
-		if GameState.has_solar:
-			_menu_solar_btn.text = "Güneş Paneli (Emisyon Sıfırlanır)  —  Alındı"
+		var equipment := "Emisyonsuz Elektrikli Tahrik" if underwater else "Güneş Paneli"
+		if (GameState.has_clean_drive if underwater else GameState.has_solar):
+			_menu_solar_btn.text = "%s (Emisyon Sıfırlanır)  —  Alındı" % equipment
 			_menu_solar_btn.disabled = true
 		else:
-			_menu_solar_btn.text = "Güneş Paneli (Emisyon Sıfırlanır)  —  15 coin"
+			_menu_solar_btn.text = "%s (Emisyon Sıfırlanır)  —  15 coin" % equipment
 			_menu_solar_btn.disabled = (GameState.coins < 15)
 
 	_update_profile_labels()

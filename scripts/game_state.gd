@@ -627,8 +627,8 @@ func is_boat_owned(boat_id: String) -> bool:
 	return boat_id in owned_boats
 
 
-func buy_or_select_boat(boat_id: String) -> bool:
-	if not BOAT_CATALOG.has(boat_id) or not is_vehicle_available(boat_id):
+func buy_or_select_boat(boat_id: String, catalog_purchase: bool = false) -> bool:
+	if not BOAT_CATALOG.has(boat_id) or (not catalog_purchase and not is_vehicle_available(boat_id)):
 		return false
 
 	if is_boat_owned(boat_id):
@@ -647,10 +647,11 @@ func buy_or_select_boat(boat_id: String) -> bool:
 	return true
 
 
-func buy_net() -> bool:
-	if has_collection_upgrade() or coins < 8:
+func buy_net(mode: int = -1) -> bool:
+	var underwater := is_underwater_level() if mode < 0 else mode == 1
+	if (has_dive_collector if underwater else has_wide_net) or coins < 8:
 		return false
-	if is_underwater_level():
+	if underwater:
 		has_dive_collector = true
 	else:
 		has_wide_net = true
@@ -660,10 +661,11 @@ func buy_net() -> bool:
 	return true
 
 
-func buy_solar() -> bool:
-	if has_clean_propulsion() or coins < 15:
+func buy_solar(mode: int = -1) -> bool:
+	var underwater := is_underwater_level() if mode < 0 else mode == 1
+	if (has_clean_drive if underwater else has_solar) or coins < 15:
 		return false
-	if is_underwater_level():
+	if underwater:
 		has_clean_drive = true
 	else:
 		has_solar = true
