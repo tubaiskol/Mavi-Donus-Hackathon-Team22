@@ -124,7 +124,7 @@ func _spawn_single_trash(is_initial: bool = false) -> void:
 func _get_random_spawn_position() -> Vector2:
 	var screen := get_viewport_rect()
 	var boat := get_node_or_null("../Boat") as Node2D
-	var min_y := screen.position.y + TOP_HUD_MARGIN
+	var min_y := maxf(screen.position.y + TOP_HUD_MARGIN, get_parent().get_water_surface_y() + 32.0)
 	var max_y := screen.end.y - SPAWN_MARGIN
 	if min_y > max_y:
 		return Vector2.INF

@@ -3,13 +3,7 @@ extends CanvasModulate
 const CLEAN_COLOR := Color.WHITE
 const DIRTY_COLOR := Color(0.58, 0.53, 0.34)
 
-const LEVEL_BACKGROUNDS := {
-	1: preload("res://assets/backgrounds/bg1/full.png"),
-	2: preload("res://assets/backgrounds/bg4/full.png"),
-	3: preload("res://assets/backgrounds/bg3/full.png"),
-	4: preload("res://assets/backgrounds/bg2/full.png"),
-	5: preload("res://assets/general-game-background.jpeg")
-}
+const LEVEL_ENVIRONMENT := preload("res://scripts/level_environment.gd")
 
 var target_color := CLEAN_COLOR
 var _bg_tex_rect: TextureRect
@@ -50,7 +44,7 @@ func update_round_background(round_num: int) -> void:
 
 
 func _get_bg_texture_for_round(round_num: int) -> Texture2D:
-	return LEVEL_BACKGROUNDS.get(round_num, LEVEL_BACKGROUNDS[1])
+	return LEVEL_ENVIRONMENT.BACKGROUNDS.get(round_num, LEVEL_ENVIRONMENT.BACKGROUNDS[1])
 
 
 func _process(delta: float) -> void:

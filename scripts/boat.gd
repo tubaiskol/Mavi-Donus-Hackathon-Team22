@@ -160,6 +160,8 @@ func _physics_process(delta: float) -> void:
 func enforce_water_bounds() -> void:
 	var screen := get_viewport_rect()
 	var min_y := screen.position.y + _edge_margin.y
+	if get_parent().has_water_surface():
+		min_y = maxf(min_y, get_parent().get_water_surface_y() + _hull_shape.size.y * 0.5)
 	position = position.clamp(Vector2(screen.position.x + _edge_margin.x, min_y), screen.end - _edge_margin)
 	if position.y <= min_y and velocity.y < 0.0:
 		velocity.y = 0.0

@@ -72,7 +72,7 @@ func _spawn_turtle() -> void:
 
 func _get_safe_turtle_spawn_position(screen: Rect2) -> Vector2:
 	var boat := get_node_or_null("../Boat") as Node2D
-	var min_y := screen.position.y + 110.0
+	var min_y := maxf(screen.position.y + 110.0, get_parent().get_water_surface_y() + 50.0)
 	var max_y := screen.end.y - EDGE_MARGIN
 	if min_y > max_y:
 		return Vector2.INF

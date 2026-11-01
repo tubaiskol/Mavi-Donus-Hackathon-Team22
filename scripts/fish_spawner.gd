@@ -30,7 +30,11 @@ func _try_spawn_fish() -> void:
 	var screen := get_viewport_rect()
 	var spawn_from_left := (randf() < 0.5)
 	var spawn_x := screen.position.x - 70.0 if spawn_from_left else screen.end.x + 70.0
-	var spawn_y := randf_range(screen.position.y + 170.0, screen.end.y - 70.0)
+	var min_y := maxf(screen.position.y + 170.0, get_parent().get_water_surface_y() + 80.0)
+	var max_y := screen.end.y - 70.0
+	if min_y > max_y:
+		return
+	var spawn_y := randf_range(min_y, max_y)
 
 	var fish = FISH_SCENE.instantiate() as Area2D
 	fish.direction = 1.0 if spawn_from_left else -1.0

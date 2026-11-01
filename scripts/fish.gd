@@ -52,19 +52,13 @@ func _ready() -> void:
 	swim_freq = randf_range(1.6, 2.6)
 	swim_amp = randf_range(14.0, 28.0)
 
-	# Dalga, ekranın üst HUD alanına ya da alt kenara taşmasın.
-	var screen := get_viewport_rect()
-	base_y = clampf(
-		global_position.y,
-		screen.position.y + TOP_MARGIN + swim_amp,
-		screen.end.y - BOTTOM_MARGIN - swim_amp
-	)
-
 	var scene_root := get_tree().current_scene
 	if scene_root:
 		_boat = scene_root.get_node_or_null("Boat") as Node2D
 
 	_setup_visual()
+	base_y = global_position.y
+	enforce_water_bounds()
 
 
 func _setup_visual() -> void:
@@ -100,6 +94,7 @@ func _physics_process(delta: float) -> void:
 		# Çarpışma sonrası: yönünde hızlanıp gemiden uzaklaşarak kaybolur
 		global_position.x += direction * speed * 1.8 * delta
 		global_position.y += _escape_y * 110.0 * delta
+		enforce_water_bounds()
 		rotation = lerp_angle(rotation, 0.0, 6.0 * delta)
 		modulate.a = maxf(modulate.a - delta * 1.5, 0.0)
 		if modulate.a <= 0.01:
@@ -109,6 +104,7 @@ func _physics_process(delta: float) -> void:
 	# Düz ilerleme + yumuşak sinüs yüzüşü.
 	# Y konumu doğrudan hesaplanır (sürekli toplama yerine), böylece dalga yerinde kalır.
 	global_position.x += direction * speed * delta
+	enforce_water_bounds()
 	global_position.y = base_y + sin(_time * swim_freq) * swim_amp
 
 	# Burun, dikey hıza doğru hafifçe eğilir (balık yüzerken yamulmuş gibi kaymaz).
@@ -123,6 +119,24 @@ func _physics_process(delta: float) -> void:
 		queue_free()
 	elif direction < 0.0 and global_position.x < screen.position.x - 120.0:
 		queue_free()
+
+
+func get_surface_clearance() -> float:
+	var shown := sprite.texture.get_size() * sprite.scale.abs()
+	return (shown.y + shown.x * sin(MAX_TILT)) * 0.5
+
+
+func enforce_water_bounds() -> void:
+	var screen := get_viewport_rect()
+	var game := get_parent().get_parent()
+	var min_y := screen.position.y + TOP_MARGIN
+	if game.has_water_surface():
+		var surface_min: float = game.get_water_surface_y() + get_surface_clearance()
+		min_y = maxf(min_y, surface_min)
+		if global_position.y < surface_min:
+			global_position.y = surface_min
+			_escape_y = 1.0
+	base_y = clampf(base_y, min_y + swim_amp, maxf(min_y + swim_amp, screen.end.y - BOTTOM_MARGIN - swim_amp))
 
 
 func _check_boat_hit() -> void:

@@ -3,6 +3,7 @@ extends Node2D
 const TOTAL_LEVELS := 5
 const MENU_FONT := preload("res://assets/menu_font.ttf")
 const PANEL_LAYOUT := preload("res://scripts/panel_layout.gd")
+const LEVEL_ENVIRONMENT := preload("res://scripts/level_environment.gd")
 
 @export_range(1, 5, 1) var test_start_level: int = 1
 
@@ -52,6 +53,7 @@ func _ready() -> void:
 
 	# Mevcut seçili seviyeyi başlat (Asla zorla 1'e sıfırlamaz!)
 	GameState.start_level_round(GameState.current_round)
+	_update_level_bounds()
 
 	GameState.pollution_changed.connect(_on_pollution_changed)
 	GameState.carried_trash_changed.connect(_on_carried_trash_changed)
@@ -144,6 +146,7 @@ func _on_viewport_size_changed() -> void:
 	if _drop_zone:
 		_drop_zone.position = PANEL_LAYOUT.dock_rect(get_viewport_rect()).get_center()
 	_update_panels_barrier()
+	_update_level_bounds()
 
 
 func get_reserved_panels_rect() -> Rect2:
@@ -158,13 +161,21 @@ func _update_panels_barrier() -> void:
 	(_panels_shape.shape as RectangleShape2D).size = rect.size
 
 
+func has_water_surface() -> bool:
+	return LEVEL_ENVIRONMENT.has_surface(GameState.current_round)
 
 
+func get_water_surface_y() -> float:
+	return LEVEL_ENVIRONMENT.surface_y(get_viewport_rect(), GameState.current_round)
 
 
-
-
-
+func _update_level_bounds() -> void:
+	$Boat.enforce_water_bounds()
+	# Pencere oranı değiştiğinde mevcut canlılar da hava bölgesine taşmasın.
+	for group in ["trash", "turtle", "fish"]:
+		for entity in get_tree().get_nodes_in_group(group):
+			if entity.has_method("enforce_water_bounds"):
+				entity.enforce_water_bounds()
 
 
 func _on_drop_zone_area_entered(area: Area2D) -> void:
@@ -318,6 +329,7 @@ func _start_next_level() -> void:
 	shop_panel.hide()
 
 	GameState.start_next_level()
+	_update_level_bounds()
 	spawner.start_level()
 
 	var canvas_mod = get_node_or_null("CanvasModulate")

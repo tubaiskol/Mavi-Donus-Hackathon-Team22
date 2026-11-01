@@ -15,6 +15,7 @@ var _pulse_timer := 0.0
 
 func _ready() -> void:
 	_bob_t = randf() * TAU
+	enforce_water_bounds()
 	hide()
 	# Çift progress bar karmaşasını önlemek için alttaki dikdörtgen bar gizlenir,
 	# yerine kaplumbağanın etrafını saran dairesel altın kurtarma halkası kullanılır.
@@ -26,6 +27,7 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	enforce_water_bounds()
 	if rescued:
 		return
 
@@ -54,6 +56,12 @@ func _physics_process(delta: float) -> void:
 
 	if rescue_time >= RESCUE_DURATION:
 		_rescue()
+
+
+func enforce_water_bounds() -> void:
+	var game := get_parent().get_parent()
+	if game.has_water_surface():
+		global_position.y = maxf(global_position.y, game.get_water_surface_y() + 50.0)
 
 
 func _draw() -> void:

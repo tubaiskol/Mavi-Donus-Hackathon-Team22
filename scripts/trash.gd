@@ -12,12 +12,14 @@ var own_pollution := 3.5
 var collected := false
 var _bob_phase := 0.0
 var _base_sprite_pos := Vector2.ZERO
+var _surface_clearance := 32.0
 
 
 func _ready() -> void:
 	_bob_phase = randf() * TAU
 	_base_sprite_pos = trash_sprite.position
 	_apply_random_texture()
+	enforce_water_bounds()
 
 	if is_initial_trash:
 		# Başlangıçtaki 7-8 çöp, başlangıç (%50+) kirliliğine zaten dahildir.
@@ -31,11 +33,18 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	enforce_water_bounds()
 	if not GameState.running or GameState.game_over:
 		return
 	_bob_phase += delta * 2.2
 	trash_sprite.position = _base_sprite_pos + Vector2(0.0, sin(_bob_phase) * 2.5)
 	trash_sprite.rotation = sin(_bob_phase * 0.7) * 0.14
+
+
+func enforce_water_bounds() -> void:
+	var game := get_parent().get_parent()
+	if game.has_water_surface():
+		global_position.y = maxf(global_position.y, game.get_water_surface_y() + _surface_clearance)
 
 
 func _on_area_entered(area: Area2D) -> void:
@@ -144,3 +153,9 @@ func _apply_random_texture() -> void:
 		trash_sprite.scale = Vector2.ONE * (1200.0 / longest_side)
 	else:
 		trash_sprite.scale = Vector2.ONE * (44.0 / maxf(longest_side, 1.0))
+	# Eski görsellerde geniş şeffaf kenarlar var; görünen atığın üstünü koru.
+	var used := chosen_texture.get_image().get_used_rect()
+	var top := (used.position.y - image_size.y * 0.5) * trash_sprite.scale.y
+	var left := (used.position.x - image_size.x * 0.5) * trash_sprite.scale.x
+	var right := (used.end.x - image_size.x * 0.5) * trash_sprite.scale.x
+	_surface_clearance = maxf(32.0, -top + maxf(absf(left), absf(right)) * sin(0.14) + 3.0)
