@@ -6,6 +6,7 @@ const RED_BOAT_TEX := preload("res://assets/red_boat.png")
 const BLUE_BOAT_TEX := preload("res://assets/blue_boat.png")
 
 var _is_manual_open := false
+var _showing_completion := false
 var _boat_buttons: Dictionary = {}
 var _active_tab := 0 # 0: Tersane, 1: Ekipman
 
@@ -35,7 +36,7 @@ func _ready() -> void:
 	hide()
 	_build_modern_shop_ui()
 
-	GameState.round_ended.connect(_open_shop)
+	GameState.round_ended.connect(_open_level_complete)
 	GameState.coins_changed.connect(_refresh)
 	GameState.boat_changed.connect(func(_id): _refresh(GameState.coins))
 
@@ -294,6 +295,12 @@ func toggle_manual_shop() -> void:
 		return
 
 	_is_manual_open = true
+	_showing_completion = false
+	panel.custom_minimum_size = Vector2(740, 0)
+	coins_row.show()
+	_trash_summary_label.show()
+	_tabs_row.show()
+	_switch_tab(_active_tab)
 	get_tree().paused = true
 	_refresh(GameState.coins)
 	continue_button.hide()
@@ -304,22 +311,29 @@ func toggle_manual_shop() -> void:
 	_center_panel()
 
 
-func _open_shop() -> void:
+func _open_level_complete() -> void:
 	if GameState.game_over or GameState.current_round >= 5:
 		return
 
 	_is_manual_open = false
+	_showing_completion = true
+	panel.custom_minimum_size = Vector2(560, 0)
+	coins_row.hide()
+	_trash_summary_label.hide()
+	_tabs_row.hide()
+	_shipyard_box.hide()
+	_equipment_box.hide()
 	_refresh(GameState.coins)
 
 	_close_manual_button.hide()
 	continue_button.show()
 	continue_button.disabled = false
-	continue_button.text = "Devam Et  —  %d. Seviyeye Başla" % (
-		GameState.current_round + 1
-	)
+	continue_button.text = "İleri  —  %d. Bölüm" % (GameState.current_round + 1)
 	if _menu_return_button:
+		_menu_return_button.text = "Ana Sayfa"
 		_menu_return_button.show()
 
+	panel.reset_size()
 	show()
 	_center_panel()
 
@@ -366,6 +380,10 @@ func _buy_solar() -> void:
 
 
 func _refresh(value: int) -> void:
+	if _showing_completion:
+		title_label.text = "%d. Bölüm Tamamlandı!" % GameState.current_round
+		_subtitle_label.text = "Tebrikler! Denizi temizledin ve tüm çöpleri konteynere ulaştırdın.\nBir sonraki göreve hazırsın!"
+		return
 	var underwater := GameState.is_underwater_level()
 	title_label.text = "Denizaltı & Dalış Mağazası" if underwater else "Tersane & Mağaza"
 	_tab_shipyard_btn.text = "Denizaltılar" if underwater else "⚓ Tersane (Gemiler)"
