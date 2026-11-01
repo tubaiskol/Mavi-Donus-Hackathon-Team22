@@ -331,6 +331,9 @@ func _center_panel() -> void:
 	panel.position = screen_center - panel.size * 0.5
 
 
+
+
+
 func _on_boat_button_pressed(boat_id: String) -> void:
 	var was_owned := GameState.is_boat_owned(boat_id)
 	if GameState.buy_or_select_boat(boat_id):
@@ -343,7 +346,7 @@ func _on_boat_button_pressed(boat_id: String) -> void:
 
 
 func _buy_net() -> void:
-	if GameState.has_wide_net or GameState.coins < NET_COST:
+	if GameState.has_collection_upgrade() or GameState.coins < NET_COST:
 		return
 
 	if GameState.buy_net():
@@ -353,7 +356,7 @@ func _buy_net() -> void:
 
 
 func _buy_solar() -> void:
-	if GameState.has_solar or GameState.coins < SOLAR_COST:
+	if GameState.has_clean_propulsion() or GameState.coins < SOLAR_COST:
 		return
 
 	if GameState.buy_solar():
@@ -363,6 +366,11 @@ func _buy_solar() -> void:
 
 
 func _refresh(value: int) -> void:
+	var underwater := GameState.is_underwater_level()
+	title_label.text = "Denizaltı & Dalış Mağazası" if underwater else "Tersane & Mağaza"
+	_tab_shipyard_btn.text = "Denizaltılar" if underwater else "⚓ Tersane (Gemiler)"
+	_tab_equip_btn.text = "Dalış Ekipmanları" if underwater else "🛠️ Tekne Ekipmanları"
+	_subtitle_label.text = "Denizaltını seç, dalgıç toplama aparatını ve elektrikli tahriki geliştir!" if underwater else "Gemini seç, ağını genişlet ve güneş enerjisiyle temiz denizlere açıl!"
 	coins_label.text = "%d Coin" % value
 	if _trash_summary_label:
 		_trash_summary_label.text = "Toplanan Çöp: %d  |  Konteynere Dökülen: %d" % [
@@ -372,6 +380,7 @@ func _refresh(value: int) -> void:
 
 	for boat_id: String in _boat_buttons:
 		var btn: Button = _boat_buttons[boat_id]
+		btn.visible = GameState.is_vehicle_available(boat_id)
 		var info: Dictionary = GameState.BOAT_CATALOG[boat_id]
 		var b_name: String = info["name"]
 		var cost: int = int(info["cost"])
@@ -382,10 +391,10 @@ func _refresh(value: int) -> void:
 
 		var stat_txt := ""
 		if r_bonus > 0:
-			stat_txt = " (+%d Ağ, +%d Konteyner Coin)" % [r_bonus, d_bonus]
+			stat_txt = " (+%d Alan, +%d Konteyner Coin)" % [r_bonus, d_bonus]
 
 		if is_active:
-			btn.text = "%s%s\n[Aktif Gemi]" % [b_name, stat_txt]
+			btn.text = "%s%s\n[Aktif %s]" % [b_name, stat_txt, "Denizaltı" if underwater else "Gemi"]
 			btn.disabled = true
 		elif owned:
 			btn.text = "%s%s\n[Sahipsin — Seç]" % [b_name, stat_txt]
@@ -394,16 +403,16 @@ func _refresh(value: int) -> void:
 			btn.text = "%s%s\nSatın Al — %d Coin" % [b_name, stat_txt, cost]
 			btn.disabled = value < cost
 
-	var wide_owned := GameState.has_wide_net
+	var wide_owned := GameState.has_collection_upgrade()
 	net_button.disabled = wide_owned or value < NET_COST
-	solar_button.disabled = GameState.has_solar or value < SOLAR_COST
+	solar_button.disabled = GameState.has_clean_propulsion() or value < SOLAR_COST
 
 	if wide_owned:
-		net_button.text = "Geniş Ağ (Toplama Alanı +25)  —  Alındı"
+		net_button.text = "%s (Toplama Alanı +25)  —  Alındı" % GameState.get_collection_equipment_name()
 	else:
-		net_button.text = "Geniş Ağ (Toplama Alanı +25)  —  %d coin" % NET_COST
+		net_button.text = "%s (Toplama Alanı +25)  —  %d coin" % [GameState.get_collection_equipment_name(), NET_COST]
 
-	if GameState.has_solar:
-		solar_button.text = "Güneş Paneli (Emisyon Sıfırlanır)  —  Alındı"
+	if GameState.has_clean_propulsion():
+		solar_button.text = "%s (Emisyon Sıfırlanır)  —  Alındı" % GameState.get_propulsion_equipment_name()
 	else:
-		solar_button.text = "Güneş Paneli (Emisyon Sıfırlanır)  —  %d coin" % SOLAR_COST
+		solar_button.text = "%s (Emisyon Sıfırlanır)  —  %d coin" % [GameState.get_propulsion_equipment_name(), SOLAR_COST]

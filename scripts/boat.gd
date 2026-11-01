@@ -10,6 +10,7 @@ const SURFACE_CONTACT_HEIGHT := 4.0
 const FACES_LEFT := ["red", "emerald"]
 
 const BOAT_TEXTURES := {
+	"sub_basic": preload("res://assets/vehicles/sub_green.png"),
 	"red": preload("res://assets/vehicles/ship_red.png"),
 	"blue": preload("res://assets/blue_boat.png"),
 	"gulet": preload("res://assets/story/gulet.png"),
@@ -147,7 +148,7 @@ func _physics_process(delta: float) -> void:
 
 	if AudioManager:
 		if is_moving and GameState.running and not GameState.game_over:
-			AudioManager.start_engine(GameState.has_solar)
+			AudioManager.start_engine(GameState.has_clean_propulsion())
 		else:
 			AudioManager.stop_engine()
 
@@ -174,7 +175,7 @@ func enforce_water_bounds() -> void:
 
 func _draw() -> void:
 	# Su yüzeyindeki toplama / ağ alanını net olarak göster
-	var ring_color := Color(0.65, 0.95, 1.0, 0.35) if not GameState.has_solar else Color(0.55, 1.0, 0.78, 0.40)
+	var ring_color := Color(0.65, 0.95, 1.0, 0.35) if not GameState.has_clean_propulsion() else Color(0.55, 1.0, 0.78, 0.40)
 	draw_arc(Vector2.ZERO, GameState.pickup_radius, 0.0, TAU, 48, ring_color, 2.5)
 
 	# Teknenin üzerinde taşınan ve konteynere götürülebilecek çöp sayısını göster

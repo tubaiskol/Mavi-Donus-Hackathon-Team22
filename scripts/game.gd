@@ -292,7 +292,7 @@ func _check_level_completion() -> void:
 	if GameState.carried_trash > 0:
 		if _delivery_guidance_timer <= 0.0:
 			_delivery_guidance_timer = 3.5
-			GameState.show_toast("Deniz temizlendi! Teknendeki %d çöpü Konteynere dök!" % GameState.carried_trash, 3.0)
+			GameState.show_toast("Deniz temizlendi! %s %d çöpü Konteynere dök!" % [GameState.get_cargo_location_name(), GameState.carried_trash], 3.0)
 		return
 
 	# 2) Kurtarılmayı bekleyen Caretta varsa seviye tamamlanamaz!

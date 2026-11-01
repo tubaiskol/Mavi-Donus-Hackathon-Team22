@@ -440,13 +440,14 @@ func _on_coins_changed(_value: int) -> void:
 
 
 func _on_boat_changed(boat_id: String) -> void:
+	_on_carried_trash_changed(GameState.carried_trash, GameState.delivered_trash)
 	if _boat_badge_label:
 		_boat_badge_label.text = GameState.get_boat_name(boat_id)
 
 
 func _on_carried_trash_changed(carried: int, delivered: int) -> void:
 	if _container_label:
-		_container_label.text = "Teknede: %d Çöp | Konteynere: %d" % [carried, delivered]
+		_container_label.text = "%s: %d Çöp | Konteynere: %d" % [GameState.get_cargo_location_name(), carried, delivered]
 
 
 func _on_quests_changed() -> void:
@@ -472,8 +473,8 @@ func _update_emission_label() -> void:
 	if GameState.is_sea_clean():
 		emission_label.text = "Emisyon: 0/sn (Deniz temiz)"
 		emission_label.add_theme_color_override("font_color", Color(0.58, 1.0, 0.72))
-	elif GameState.has_solar:
-		emission_label.text = "Emisyon: 0/sn (Güneş)"
+	elif GameState.has_clean_propulsion():
+		emission_label.text = "Emisyon: 0/sn (%s)" % ("Elektrikli" if GameState.is_underwater_level() else "Güneş")
 		emission_label.add_theme_color_override("font_color", Color(0.58, 1.0, 0.72))
 	else:
 		emission_label.text = "Emisyon: +%.2f/sn (Dizel)" % GameState.get_current_emission_rate()

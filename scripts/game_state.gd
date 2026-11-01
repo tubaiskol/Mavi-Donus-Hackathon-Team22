@@ -16,6 +16,11 @@ const INITIAL_TRASH_POLLUTION := 7.0
 const NEW_TRASH_POLLUTION := 3.5
 
 const BOAT_CATALOG := {
+	"sub_basic": {
+		"name": "Keşif Denizaltısı", "cost": 0, "radius_bonus": 0.0,
+		"delivery_bonus": 0, "desc": "Standart derin su temizlik denizaltısı",
+		"icon_path": "res://assets/vehicles/sub_green.png"
+	},
 	"red": {
 		"name": "Kırmızı Balıkçı Teknesi",
 		"cost": 0,
@@ -93,7 +98,7 @@ const BOAT_CATALOG := {
 
 const BOAT_ORDER := [
 	"red", "blue", "gulet", "emerald",
-	"coast_guard", "sub_fat", "sub_green"
+	"coast_guard", "sub_basic", "sub_fat", "sub_green"
 ]
 
 const LEVEL_STORIES := {
@@ -122,7 +127,7 @@ const LEVEL_STORIES := {
 		"title": "Derin Kanal — Zehirli Varil Krizi",
 		"badge": "☣️ Toksik Varil Sızıntısı",
 		"speaker": "Dalgıç Deniz",
-		"text": "Alarm! Denizaltı rotasındaki derin kanala kaçak zehirli atık varilleri ve petrol balçığı sızmış! Kirlilik tehlikeli boyutta, teknene güneş paneli takmayı unutma!",
+		"text": "Alarm! Denizaltı rotasındaki derin kanala kaçak zehirli atık varilleri ve petrol balçığı sızmış! Kirlilik tehlikeli boyutta, denizaltına emisyonsuz elektrikli tahrik takmayı unutma!",
 		"objective": "Zehirli varilleri ve petrol balçıklarını topla, emisyonu sıfırla."
 	},
 	5: {
@@ -138,10 +143,12 @@ const LEVEL_STORIES := {
 var coins := 0
 var unlocked_level := 1
 var current_round := 1
-var owned_boats: Array[String] = ["red"]
+var owned_boats: Array[String] = ["red", "sub_basic"]
 var selected_boat := "red"
 var has_solar := false
 var has_wide_net := false
+var has_dive_collector := false
+var has_clean_drive := false
 var delivered_trash := 0
 var total_collected_trash := 0
 var rescued_turtles := 0
@@ -210,7 +217,7 @@ func _init_default_quests() -> void:
 		},
 		{
 			"id": "buy_solar",
-			"title": "Temiz Enerji: Güneş Paneli satın al",
+			"title": "Temiz Enerji: Emisyonsuz tahrik edin",
 			"target": 1,
 			"progress": 0,
 			"reward": 8,
@@ -245,6 +252,8 @@ func save_game() -> void:
 		"selected_boat": selected_boat,
 		"has_solar": has_solar,
 		"has_wide_net": has_wide_net,
+		"has_dive_collector": has_dive_collector,
+		"has_clean_drive": has_clean_drive,
 		"delivered_trash": delivered_trash,
 		"total_collected_trash": total_collected_trash,
 		"rescued_turtles": rescued_turtles,
@@ -292,6 +301,8 @@ func load_game() -> void:
 			owned_boats.append(str(b))
 	if not ("red" in owned_boats):
 		owned_boats.append("red")
+	if not ("sub_basic" in owned_boats):
+		owned_boats.append("sub_basic")
 
 	selected_boat = str(data.get("selected_boat", "red"))
 	if not (selected_boat in owned_boats):
@@ -299,6 +310,8 @@ func load_game() -> void:
 
 	has_solar = bool(data.get("has_solar", false))
 	has_wide_net = bool(data.get("has_wide_net", false))
+	has_dive_collector = bool(data.get("has_dive_collector", false))
+	has_clean_drive = bool(data.get("has_clean_drive", false))
 	delivered_trash = int(data.get("delivered_trash", 0))
 	total_collected_trash = int(data.get("total_collected_trash", 0))
 	rescued_turtles = int(data.get("rescued_turtles", 0))
@@ -313,6 +326,7 @@ func load_game() -> void:
 					q["progress"] = int(sq.get("progress", 0))
 					q["completed"] = bool(sq.get("completed", false))
 
+	ensure_level_vehicle()
 	recalculate_pickup_radius()
 	update_emission_for_current_round()
 	coins_changed.emit(coins)
@@ -324,10 +338,12 @@ func reset_all_data() -> void:
 	coins = 0
 	unlocked_level = 1
 	current_round = 1
-	owned_boats = ["red"]
+	owned_boats = ["red", "sub_basic"]
 	selected_boat = "red"
 	has_solar = false
 	has_wide_net = false
+	has_dive_collector = false
+	has_clean_drive = false
 	delivered_trash = 0
 	total_collected_trash = 0
 	rescued_turtles = 0
@@ -382,7 +398,7 @@ func get_min_pollution_for_level(level: int) -> float:
 
 
 func update_emission_for_current_round() -> void:
-	if has_solar:
+	if has_clean_propulsion():
 		emission_per_sec = 0.0
 	else:
 		emission_per_sec = 1.50 + (current_round - 1) * 0.15
@@ -390,7 +406,7 @@ func update_emission_for_current_round() -> void:
 
 func recalculate_pickup_radius() -> void:
 	var base := 40.0
-	if has_wide_net:
+	if has_collection_upgrade():
 		base += 25.0
 	if BOAT_CATALOG.has(selected_boat):
 		base += float(BOAT_CATALOG[selected_boat]["radius_bonus"])
@@ -399,6 +415,7 @@ func recalculate_pickup_radius() -> void:
 
 func start_level_round(lvl: int) -> void:
 	current_round = clampi(lvl, 1, 5)
+	ensure_level_vehicle()
 	round_time = get_round_time()
 	update_emission_for_current_round()
 	recalculate_pickup_radius()
@@ -414,6 +431,8 @@ func start_next_level() -> void:
 	if current_round < 5:
 		current_round += 1
 		unlocked_level = maxi(unlocked_level, current_round)
+	ensure_level_vehicle()
+	recalculate_pickup_radius()
 	round_time = get_round_time()
 	update_emission_for_current_round()
 	carried_trash = 0
@@ -433,6 +452,15 @@ func start_level_pollution(total_trash: int = 15, initial_trash: int = 7) -> voi
 
 func get_initial_trash_unit_pollution() -> float:
 	return initial_trash_unit_pollution
+
+
+func is_sea_clean() -> bool:
+	# Kalan sayısı henüz üretilmemiş çöpleri de içerir.
+	return remaining_trash == 0
+
+
+func get_current_emission_rate() -> float:
+	return 0.0 if has_clean_propulsion() or is_sea_clean() else emission_per_sec
 
 
 func add_new_trash_pollution(amount: float = NEW_TRASH_POLLUTION) -> void:
@@ -516,7 +544,7 @@ func _update_quests() -> void:
 			"rescue_2":
 				q["progress"] = mini(rescued_turtles, int(q["target"]))
 			"buy_solar":
-				q["progress"] = 1 if has_solar else 0
+				q["progress"] = 1 if has_solar or has_clean_drive else 0
 
 		if q["progress"] != prev_prog:
 			changed = true
@@ -600,7 +628,7 @@ func is_boat_owned(boat_id: String) -> bool:
 
 
 func buy_or_select_boat(boat_id: String) -> bool:
-	if not BOAT_CATALOG.has(boat_id):
+	if not BOAT_CATALOG.has(boat_id) or not is_vehicle_available(boat_id):
 		return false
 
 	if is_boat_owned(boat_id):
@@ -620,9 +648,12 @@ func buy_or_select_boat(boat_id: String) -> bool:
 
 
 func buy_net() -> bool:
-	if has_wide_net or coins < 8:
+	if has_collection_upgrade() or coins < 8:
 		return false
-	has_wide_net = true
+	if is_underwater_level():
+		has_dive_collector = true
+	else:
+		has_wide_net = true
 	add_coins(-8)
 	recalculate_pickup_radius()
 	save_game()
@@ -630,9 +661,12 @@ func buy_net() -> bool:
 
 
 func buy_solar() -> bool:
-	if has_solar or coins < 15:
+	if has_clean_propulsion() or coins < 15:
 		return false
-	has_solar = true
+	if is_underwater_level():
+		has_clean_drive = true
+	else:
+		has_solar = true
 	add_coins(-15)
 	update_emission_for_current_round()
 	_update_quests()
@@ -641,10 +675,51 @@ func buy_solar() -> bool:
 
 
 func set_boat(boat_id: String) -> void:
+	if not is_vehicle_available(boat_id) or not is_boat_owned(boat_id):
+		return
 	selected_boat = boat_id
 	recalculate_pickup_radius()
 	boat_changed.emit(selected_boat)
 	save_game()
+
+
+func is_underwater_level() -> bool:
+	return current_round >= 3
+
+
+func is_vehicle_available(boat_id: String) -> bool:
+	var submarine := boat_id in ["sub_basic", "sub_fat", "sub_green", "royal"]
+	return BOAT_CATALOG.has(boat_id) and submarine == is_underwater_level()
+
+
+func ensure_level_vehicle() -> void:
+	if is_vehicle_available(selected_boat):
+		return
+	selected_boat = "sub_basic" if is_underwater_level() else "red"
+	for boat_id in owned_boats:
+		if is_vehicle_available(boat_id):
+			selected_boat = boat_id
+	boat_changed.emit(selected_boat)
+
+
+func has_collection_upgrade() -> bool:
+	return has_dive_collector if is_underwater_level() else has_wide_net
+
+
+func has_clean_propulsion() -> bool:
+	return has_clean_drive if is_underwater_level() else has_solar
+
+
+func get_collection_equipment_name() -> String:
+	return "Dalgıç Toplama Aparatı" if is_underwater_level() else "Geniş Ağ"
+
+
+func get_propulsion_equipment_name() -> String:
+	return "Emisyonsuz Elektrikli Tahrik" if is_underwater_level() else "Güneş Paneli"
+
+
+func get_cargo_location_name() -> String:
+	return "Denizaltında" if is_underwater_level() else "Teknede"
 
 
 func get_boat_name(boat_id: String = "") -> String:
@@ -656,12 +731,3 @@ func get_boat_name(boat_id: String = "") -> String:
 
 func show_toast(message: String, duration: float = 3.0) -> void:
 	toast_requested.emit(message, duration)
-
-
-func is_sea_clean() -> bool:
-	# Kalan sayısı henüz üretilmemiş çöpleri de içerir.
-	return remaining_trash == 0
-
-
-func get_current_emission_rate() -> float:
-	return 0.0 if has_solar or is_sea_clean() else emission_per_sec
