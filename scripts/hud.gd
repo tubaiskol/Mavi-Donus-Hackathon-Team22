@@ -469,9 +469,12 @@ func _update_trash_label() -> void:
 
 
 func _update_emission_label() -> void:
-	if GameState.has_solar:
+	if GameState.is_sea_clean():
+		emission_label.text = "Emisyon: 0/sn (Deniz temiz)"
+		emission_label.add_theme_color_override("font_color", Color(0.58, 1.0, 0.72))
+	elif GameState.has_solar:
 		emission_label.text = "Emisyon: 0/sn (Güneş)"
 		emission_label.add_theme_color_override("font_color", Color(0.58, 1.0, 0.72))
 	else:
-		emission_label.text = "Emisyon: +%.2f/sn (Dizel)" % GameState.emission_per_sec
+		emission_label.text = "Emisyon: +%.2f/sn (Dizel)" % GameState.get_current_emission_rate()
 		emission_label.add_theme_color_override("font_color", Color(1.0, 0.82, 0.52))

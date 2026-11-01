@@ -565,7 +565,7 @@ func clean_motor_pollution(amount: float) -> void:
 
 
 func add_pollution(amount: float) -> void:
-	if game_over:
+	if game_over or is_sea_clean():
 		return
 
 	if amount >= 0.0:
@@ -576,6 +576,10 @@ func add_pollution(amount: float) -> void:
 
 
 func _update_pollution() -> void:
+	# Son çöp toplandıktan sonra teslimat ve Caretta kurtarma boyunca da %0.
+	if is_sea_clean():
+		trash_pollution = 0.0
+		motor_pollution = 0.0
 	pollution = clampf(trash_pollution + motor_pollution, 0.0, 100.0)
 	pollution_changed.emit(pollution)
 
@@ -652,3 +656,12 @@ func get_boat_name(boat_id: String = "") -> String:
 
 func show_toast(message: String, duration: float = 3.0) -> void:
 	toast_requested.emit(message, duration)
+
+
+func is_sea_clean() -> bool:
+	# Kalan sayısı henüz üretilmemiş çöpleri de içerir.
+	return remaining_trash == 0
+
+
+func get_current_emission_rate() -> float:
+	return 0.0 if has_solar or is_sea_clean() else emission_per_sec
