@@ -55,6 +55,8 @@ func _ready() -> void:
 			gs.round_ended.connect(_on_round_ended)
 			gs.pollution_changed.connect(_on_pollution_changed)
 
+	# Ambiyans .wav dosyası döngüye alınmamış; bitince yeniden başlat.
+	ambient_player.finished.connect(func(): ambient_player.play())
 	start_ambient()
 
 
@@ -195,7 +197,9 @@ func start_engine(is_solar: bool) -> void:
 	last_engine_was_solar = is_solar
 	var sound_key := "boat_engine_solar" if is_solar else "boat_engine_diesel"
 	if sounds.has(sound_key):
-		engine_player.stream = sounds[sound_key]
+		# Aynı akışı her karede yeniden atamak sesi baştan başlatıp cızırdatır.
+		if engine_player.stream != sounds[sound_key]:
+			engine_player.stream = sounds[sound_key]
 		engine_player.volume_db = (-8.0 if is_solar else -5.0) + _sfx_offset_db()
 		if not engine_player.playing:
 			engine_player.play()

@@ -4,3 +4,6 @@
 
 # Export çıktıları
 build/
+
+# Editör geçici dosyaları
+*.tmp

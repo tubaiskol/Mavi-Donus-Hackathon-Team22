@@ -15,6 +15,7 @@ var time_left := 0.0
 @onready var continue_button: Button = $ShopPanel/PanelContainer/VBoxContainer/ContinueButton
 
 var _result_layer: CanvasLayer
+var _last_result_win := false
 var _result_title: Label
 var _result_pol: Label
 var _result_msg: Label
@@ -334,6 +335,7 @@ func _on_game_lost() -> void:
 
 
 func _show_result(win: bool) -> void:
+	_last_result_win = win
 	shop_panel.hide()
 	_result_title.text = "Kazandın!" if win else "Kaybettin"
 	_result_title.add_theme_color_override(
@@ -442,7 +444,10 @@ func _restart_current_level() -> void:
 	if AudioManager:
 		AudioManager.play_button()
 	get_tree().paused = false
-	# Kaybedilen veya mevcut seviyeyi baştan başlatır (Seviye 1'e zorlamaz!)
+	# Kaybedilen veya mevcut seviyeyi baştan başlatır. Oyun kazanıldıysa (5. seviye bitti)
+	# "Tekrar Oyna" 1. seviyeden başlatır.
+	if _last_result_win:
+		GameState.current_round = 1
 	GameState.start_level_round(GameState.current_round)
 	get_tree().reload_current_scene()
 

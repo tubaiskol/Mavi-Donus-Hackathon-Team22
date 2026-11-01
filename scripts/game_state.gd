@@ -72,14 +72,6 @@ const BOAT_CATALOG := {
 		"desc": "Elektrikli sessiz denizaltı | +54 Alan, +5 Coin",
 		"icon_path": "res://assets/vehicles/sub_green.png"
 	},
-	"drill_robot": {
-		"name": "Derin Deniz Temizlik Robotu",
-		"cost": 65,
-		"radius_bonus": 62.0,
-		"delivery_bonus": 6,
-		"desc": "Büyük okyanus robotu | +62 Alan, +6 Coin",
-		"icon_path": "res://assets/vehicles/drill_robot.png"
-	},
 	# Eski kayıtlara tam uyumluluk takma adları:
 	"gold": {
 		"name": "Sahil Güvenlik Botu",
@@ -101,7 +93,7 @@ const BOAT_CATALOG := {
 
 const BOAT_ORDER := [
 	"red", "blue", "gulet", "emerald",
-	"coast_guard", "sub_fat", "sub_green", "drill_robot"
+	"coast_guard", "sub_fat", "sub_green"
 ]
 
 const LEVEL_STORIES := {
@@ -295,7 +287,9 @@ func load_game() -> void:
 	var raw_boats = data.get("owned_boats", ["red"])
 	owned_boats.clear()
 	for b in raw_boats:
-		owned_boats.append(str(b))
+		# Katalogdan kaldırılan araçlar (örn. drill_robot) eski kayıtlarda kalmış olabilir
+		if BOAT_CATALOG.has(str(b)):
+			owned_boats.append(str(b))
 	if not ("red" in owned_boats):
 		owned_boats.append("red")
 

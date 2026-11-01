@@ -2,8 +2,11 @@ extends CharacterBody2D
 
 const ACCELERATION := 900.0
 const FRICTION := 700.0
-const EDGE_MARGIN := Vector2(24, 24)
 const BASE_PICKUP_RADIUS := 40.0
+
+# Görsellerin varsayılan baktığı yön. Burada yazmayan araçlar SAĞA bakar.
+# Kırmızı ve yeşil gemi görselleri SOLA bakıyor (başı solda), diğerleri sağa.
+const FACES_LEFT := ["red", "emerald"]
 
 const BOAT_TEXTURES := {
 	"red": preload("res://assets/vehicles/ship_red.png"),
@@ -13,13 +16,15 @@ const BOAT_TEXTURES := {
 	"coast_guard": preload("res://assets/story/coast_guard.png"),
 	"sub_fat": preload("res://assets/vehicles/sub_fat.png"),
 	"sub_green": preload("res://assets/vehicles/sub_green.png"),
-	"drill_robot": preload("res://assets/vehicles/drill_robot.png"),
 	"gold": preload("res://assets/story/coast_guard.png"),
 	"royal": preload("res://assets/vehicles/sub_fat.png")
 }
 
 var pickup_circle := CircleShape2D.new()
 var _hit_flash_timer := 0.0
+var _sprite_faces_left := false
+var _look_dir := 1.0 # son yatay yön: -1 sol, +1 sağ
+var _edge_margin := Vector2(24, 24)
 
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var pickup_area: Area2D = $PickupArea
@@ -46,13 +51,23 @@ func _apply_boat_texture(boat_id: String) -> void:
 	var target_len := 125.0
 	if boat_id in ["gulet", "coast_guard"]:
 		target_len = 140.0
-	elif boat_id in ["sub_fat", "drill_robot"]:
+	elif boat_id == "sub_fat":
 		target_len = 130.0
-	elif boat_id == "blue":
-		target_len = 220.0 # Orijinal blue_boat geniş şeffaf kenarlığa sahip
 	var s := target_len / maxf(longest, 1.0)
 	sprite.scale = Vector2(s, s)
 	sprite.self_modulate = Color.WHITE
+
+	# Her aracın görseli farklı yöne bakabilir; çevirme buna göre yapılır.
+	var resolved_id: String = boat_id
+	if boat_id == "gold":
+		resolved_id = "coast_guard"
+	elif boat_id == "royal":
+		resolved_id = "sub_fat"
+	_sprite_faces_left = resolved_id in FACES_LEFT
+
+	# Ekran kenar payı gemi boyuna göre (eski sabit 24 px gemiyi yarı ekran dışına çıkarıyordu).
+	var shown := tex.get_size() * s
+	_edge_margin = Vector2(maxf(shown.x * 0.45, 24.0), maxf(shown.y * 0.40, 24.0))
 
 	_update_pickup_shape()
 	queue_redraw()
@@ -60,6 +75,11 @@ func _apply_boat_texture(boat_id: String) -> void:
 
 func trigger_fish_hit_feedback() -> void:
 	_hit_flash_timer = 0.8
+
+
+# Tekne yanıp sönerken (balığa çarptıktan sonra) tekrar ceza yemez.
+func is_invulnerable() -> bool:
+	return _hit_flash_timer > 0.0
 
 
 func _physics_process(delta: float) -> void:
@@ -83,8 +103,8 @@ func _physics_process(delta: float) -> void:
 
 	var screen := get_viewport_rect()
 	position = position.clamp(
-		screen.position + EDGE_MARGIN,
-		screen.end - EDGE_MARGIN
+		screen.position + _edge_margin,
+		screen.end - _edge_margin
 	)
 
 	# Sol üst HUD paneli altına gemi giremez (görüş kapalı)
@@ -95,17 +115,14 @@ func _physics_process(delta: float) -> void:
 			position.y = 162.0
 
 	# Teknenin ters dönmesini engelle:
-	# Sağa ve sola giderken görseli yatay çevir (flip_h), asla baş aşağı dönmesin!
+	# Sağa/sola giderken görseli yatay çevir (flip_h); asla baş aşağı dönmez.
+	# Görsel sola bakıyorsa (kırmızı, yeşil gemi) çevirme mantığı tersine işler.
 	if absf(velocity.x) > 12.0:
-		sprite.flip_h = (velocity.x < 0.0)
+		_look_dir = signf(velocity.x)
+	sprite.flip_h = ((_look_dir < 0.0) != _sprite_faces_left)
 
-	# Su üzerinde hafif meyillenme (en fazla ±10-12 derece)
-	var target_tilt := 0.0
-	if absf(velocity.x) > 8.0:
-		var dir := -1.0 if sprite.flip_h else 1.0
-		target_tilt = clampf(velocity.y / GameState.boat_speed, -1.0, 1.0) * 0.18 * dir
-	else:
-		target_tilt = clampf(velocity.y / GameState.boat_speed, -1.0, 1.0) * 0.10
+	# Su üzerinde hafif meyillenme (en fazla ±10 derece), baş gidilen yöne göre
+	var target_tilt := clampf(velocity.y / maxf(GameState.boat_speed, 1.0), -1.0, 1.0) * 0.18 * _look_dir
 
 	sprite.rotation = lerp_angle(sprite.rotation, target_tilt, 8.0 * delta)
 
