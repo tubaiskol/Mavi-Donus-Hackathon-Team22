@@ -202,13 +202,10 @@ func _update_dock_labels() -> void:
 	if _dock_sub_label == null:
 		return
 	if GameState.carried_trash > 0:
-		_dock_sub_label.text = "Buraya Bırak: %d Çöp (+Ek Coin!)\nToplam Dökülen: %d" % [
-			GameState.carried_trash,
-			GameState.delivered_trash
-		]
+		_dock_sub_label.text = "Çöpleri buraya bırak (+Ek Coin!)"
 		_dock_sub_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.38))
 	else:
-		_dock_sub_label.text = "Çöp topla ve buraya dök!\nToplam Dökülen: %d" % GameState.delivered_trash
+		_dock_sub_label.text = "Çöp topla ve buraya dök!"
 		_dock_sub_label.add_theme_color_override("font_color", Color(0.85, 0.96, 1.0))
 
 
