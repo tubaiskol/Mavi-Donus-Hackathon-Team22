@@ -382,12 +382,12 @@ func _show_result(win: bool) -> void:
 		"font_color",
 		Color(0.08, 0.54, 0.44) if win else Color(0.82, 0.22, 0.20)
 	)
-	_result_pol.text = "Son kirlilik: %%%d  |  Toplanan: %d  |  Konteyner: %d" % [
-		roundi(GameState.pollution),
-		GameState.total_collected_trash,
-		GameState.delivered_trash
-	]
+	_result_pol.text = "Son kirlilik: %%%d" % roundi(GameState.pollution)
 	if win:
+		_result_pol.text += "  |  Toplanan: %d  |  Konteyner: %d" % [
+			GameState.total_collected_trash,
+			GameState.delivered_trash
+		]
 		_result_msg.text = "Deniz nefes alıyor. Beş seviyeyi de temizledin! Temizlik bir tur, dönüşüm bir karar."
 	elif GameState.pollution >= 100.0:
 		_result_msg.text = "Deniz kirliliğe yenik düştü. Bu turu tekrar deneyebilirsin!"
