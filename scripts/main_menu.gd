@@ -206,7 +206,7 @@ func _build_modals() -> void:
 	howto_vb.add_child(_modal_label("Nasıl Oynanır?", 36, Color(0.06, 0.24, 0.36)))
 	howto_vb.add_child(_modal_label("• WASD veya Ok tuşlarıyla temizlik gemisini hareket ettir.", 19))
 	howto_vb.add_child(_modal_label("• Deniz en az %50 kirlilik ve 7-8 varsayılan çöple başlar; yeni düşen çöpler kirliliği artırır!", 19))
-	howto_vb.add_child(_modal_label("• Çöpleri toplayıp sağ üstteki Çöp Konteynerine dökerek bonus coin kazan.", 19))
+	howto_vb.add_child(_modal_label("• Çöpleri toplayıp sağ alttaki Çöp Konteynerine dökerek bonus coin kazan.", 19))
 	howto_vb.add_child(_modal_label("• Caretta'nın yanında 2 saniye kalarak onu kurtar (+5 Coin, -10 Kirlilik).", 19))
 	howto_vb.add_child(_modal_label("• Oyun içinde 'P / ESC' ile duraklatabilir, 'M' ile tersaneye, 'G' ile görevlere gidebilirsin.", 19))
 	howto_vb.add_child(_modal_button("Geri Dön", func():

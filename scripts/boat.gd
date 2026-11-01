@@ -25,6 +25,7 @@ var _hit_flash_timer := 0.0
 var _sprite_faces_left := false
 var _look_dir := 1.0 # son yatay yön: -1 sol, +1 sağ
 var _edge_margin := Vector2(24, 24)
+var _hull_shape := RectangleShape2D.new()
 
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var pickup_area: Area2D = $PickupArea
@@ -32,6 +33,7 @@ var _edge_margin := Vector2(24, 24)
 
 
 func _ready() -> void:
+	$CollisionShape2D.shape = _hull_shape
 	pickup_shape.shape = pickup_circle
 	pickup_shape.transform = Transform2D.IDENTITY
 
@@ -68,6 +70,8 @@ func _apply_boat_texture(boat_id: String) -> void:
 	# Ekran kenar payı gemi boyuna göre (eski sabit 24 px gemiyi yarı ekran dışına çıkarıyordu).
 	var shown := tex.get_size() * s
 	_edge_margin = Vector2(maxf(shown.x * 0.45, 24.0), maxf(shown.y * 0.40, 24.0))
+	# Görselin tamamı (su üzerindeki eğim dahil) panellerin dışında kalsın.
+	_hull_shape.size = Vector2(shown.x + shown.y * sin(0.18), shown.y + shown.x * sin(0.18))
 
 	_update_pickup_shape()
 	queue_redraw()
@@ -101,11 +105,7 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 
-	var screen := get_viewport_rect()
-	position = position.clamp(
-		screen.position + _edge_margin,
-		screen.end - _edge_margin
-	)
+	enforce_water_bounds()
 
 	# Sol üst HUD paneli altına gemi giremez (görüş kapalı)
 	if position.x < 370.0 and position.y < 162.0:
@@ -125,6 +125,7 @@ func _physics_process(delta: float) -> void:
 	var target_tilt := clampf(velocity.y / maxf(GameState.boat_speed, 1.0), -1.0, 1.0) * 0.18 * _look_dir
 
 	sprite.rotation = lerp_angle(sprite.rotation, target_tilt, 8.0 * delta)
+	enforce_water_bounds()
 
 	if _hit_flash_timer > 0.0:
 		_hit_flash_timer -= delta
@@ -147,6 +148,17 @@ func _physics_process(delta: float) -> void:
 
 	_update_pickup_shape()
 	queue_redraw()
+
+
+
+
+
+func enforce_water_bounds() -> void:
+	var screen := get_viewport_rect()
+	var min_y := screen.position.y + _edge_margin.y
+	position = position.clamp(Vector2(screen.position.x + _edge_margin.x, min_y), screen.end - _edge_margin)
+	if position.y <= min_y and velocity.y < 0.0:
+		velocity.y = 0.0
 
 
 func _draw() -> void:

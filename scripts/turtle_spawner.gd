@@ -55,21 +55,27 @@ func _spawn_turtle() -> void:
 
 	var screen := get_viewport_rect()
 	var spawn_position := _get_safe_turtle_spawn_position(screen)
+	if not spawn_position.is_finite():
+		spawn_timer.start(1.0)
+		return
 
 	turtle_instance = TURTLE_SCENE.instantiate() as Area2D
+	turtle_instance.add_to_group("turtle")
 
 	turtle_instance.tree_exiting.connect(
 		_on_turtle_removed.bind(turtle_instance, active_round)
 	)
 
-	add_child(turtle_instance)
 	turtle_instance.global_position = spawn_position
+	add_child(turtle_instance)
 
 
 func _get_safe_turtle_spawn_position(screen: Rect2) -> Vector2:
 	var boat := get_node_or_null("../Boat") as Node2D
 	var min_y := screen.position.y + 110.0
 	var max_y := screen.end.y - EDGE_MARGIN
+	if min_y > max_y:
+		return Vector2.INF
 
 	for attempt in 30:
 		var pos := Vector2(
@@ -79,8 +85,8 @@ func _get_safe_turtle_spawn_position(screen: Rect2) -> Vector2:
 		# 1) Sol üst HUD gösterge paneli (Görüş yok)
 		if pos.x < 410.0 and pos.y < 220.0:
 			continue
-		# 2) Sağ üst Çöp Konteyneri ve Görevler kartı bölgesi (Görüş yok)
-		if pos.x > screen.end.x - 290.0 and pos.y < 350.0:
+		# 2) Panel sınırları ve kurtarma halkası için güvenli mesafe.
+		if get_parent().get_reserved_panels_rect().grow(80.0).has_point(pos):
 			continue
 		# 3) Üst orta tur/zamanlayıcı paneli
 		var center_x := screen.position.x + screen.size.x * 0.5
@@ -90,11 +96,21 @@ func _get_safe_turtle_spawn_position(screen: Rect2) -> Vector2:
 			continue
 		return pos
 
-	# Güvenli açık deniz konumu
-	return Vector2(
-		randf_range(screen.position.x + 400.0, maxf(screen.position.x + 420.0, screen.end.x - 300.0)),
-		randf_range(230.0, max_y)
-	)
+	# Yedek konum da normal üretimle aynı sınırları sağlamalı.
+	for y in range(ceili(min_y), int(max_y) + 1, 32):
+		for x in range(int(screen.position.x + EDGE_MARGIN), int(screen.end.x - EDGE_MARGIN) + 1, 32):
+			var pos := Vector2(x, y)
+			if pos.x < 410.0 and pos.y < 220.0:
+				continue
+			if get_parent().get_reserved_panels_rect().grow(80.0).has_point(pos):
+				continue
+			var center_x := screen.get_center().x
+			if absf(pos.x - center_x) < 130.0 and pos.y < 140.0:
+				continue
+			if boat and pos.distance_to(boat.global_position) < 120.0:
+				continue
+			return pos
+	return Vector2.INF
 
 
 func _on_turtle_removed(turtle: Area2D, spawn_round: int) -> void:

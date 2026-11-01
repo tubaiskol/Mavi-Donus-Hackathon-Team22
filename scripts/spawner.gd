@@ -105,12 +105,14 @@ func _spawn_single_trash(is_initial: bool = false) -> void:
 		return
 
 	var spawn_position := _get_random_spawn_position()
+	if not spawn_position.is_finite():
+		return
 
 	var trash := TRASH_SCENE.instantiate() as Area2D
 	trash.set("is_initial_trash", is_initial)
 	trash.add_to_group("trash")
-	add_child(trash)
 	trash.global_position = spawn_position
+	add_child(trash)
 
 	spawned_total += 1
 
@@ -124,6 +126,8 @@ func _get_random_spawn_position() -> Vector2:
 	var boat := get_node_or_null("../Boat") as Node2D
 	var min_y := screen.position.y + TOP_HUD_MARGIN
 	var max_y := screen.end.y - SPAWN_MARGIN
+	if min_y > max_y:
+		return Vector2.INF
 
 	for attempt in 30:
 		var pos := Vector2(
@@ -139,19 +143,21 @@ func _get_random_spawn_position() -> Vector2:
 			continue
 		return pos
 
-	# Güvenli açık deniz fallback'i (Asla yasaklı UI bölgelerine düşmez)
-	return Vector2(
-		randf_range(screen.position.x + 400.0, maxf(screen.position.x + 420.0, screen.end.x - 300.0)),
-		randf_range(230.0, max_y)
-	)
+	# Rastgele denemeler tükenince de aynı yasak alan denetimi uygulanır.
+	for y in range(ceili(min_y), int(max_y) + 1, 32):
+		for x in range(int(screen.position.x + SPAWN_MARGIN), int(screen.end.x - SPAWN_MARGIN) + 1, 32):
+			var pos := Vector2(x, y)
+			if not _is_position_in_forbidden_zone(pos, screen) and (boat == null or pos.distance_to(boat.global_position) >= 90.0):
+				return pos
+	return Vector2.INF
 
 
 func _is_position_in_forbidden_zone(pos: Vector2, screen: Rect2) -> bool:
 	# 1) Sol üst HUD gösterge paneli (Kirlilik, sayaç ve istatistik kartı)
 	if pos.x < 400.0 and pos.y < 210.0:
 		return true
-	# 2) Sağ üst Çöp Konteyneri ve Görevler kartı bölgesi (Görüş yok)
-	if pos.x > screen.end.x - 290.0 and pos.y < 350.0:
+	# 2) Sağ alt paneller: görsel boyutu ve yanaşma payı da boş kalır.
+	if get_parent().get_reserved_panels_rect().grow(64.0).has_point(pos):
 		return true
 	# 3) Üst orta Tur / Zamanlayıcı / Duraklat paneli
 	var center_x := screen.position.x + screen.size.x * 0.5

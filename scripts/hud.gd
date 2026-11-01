@@ -1,6 +1,7 @@
 extends CanvasLayer
 
 const MENU_FONT := preload("res://assets/menu_font.ttf")
+const PANEL_LAYOUT := preload("res://scripts/panel_layout.gd")
 
 @onready var stats_box: VBoxContainer = $StatsBox
 @onready var pollution_label: Label = $StatsBox/PollutionLabel
@@ -46,6 +47,9 @@ func _ready() -> void:
 	_on_boat_changed(GameState.selected_boat)
 	_on_carried_trash_changed(GameState.carried_trash, GameState.delivered_trash)
 	_on_quests_changed()
+	_layout_side_quests_card()
+	get_viewport().size_changed.connect(_layout_side_quests_card)
+	_quests_side_panel.minimum_size_changed.connect(_layout_side_quests_card)
 	_update_trash_label()
 	_update_emission_label()
 
@@ -161,7 +165,7 @@ func _style_hud() -> void:
 	_toast_panel.add_theme_stylebox_override("panel", toast_sb)
 	_toast_panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	_toast_panel.offset_left = 180.0
-	_toast_panel.offset_right = -180.0
+	_toast_panel.offset_right = -(PANEL_LAYOUT.WIDTH + PANEL_LAYOUT.EDGE_MARGIN + 16.0)
 	_toast_panel.offset_top = -78.0
 	_toast_panel.offset_bottom = -20.0
 	_toast_panel.modulate.a = 0.0
@@ -180,8 +184,11 @@ func _style_hud() -> void:
 	_toast_panel.add_child(_toast_label)
 
 
+
+
+
 func _build_side_quests_card() -> void:
-	# SAĞ PANELDE AYRI GÖREVLER KARTI (Konteynerin altında ferah görünüm)
+	# Sağ altta, konteynerin hemen üstündeki görevler kartı.
 	_quests_side_panel = PanelContainer.new()
 	_quests_side_panel.name = "QuestsSideCard"
 	var sb := StyleBoxFlat.new()
@@ -195,13 +202,7 @@ func _build_side_quests_card() -> void:
 	sb.content_margin_bottom = 10
 	_quests_side_panel.add_theme_stylebox_override("panel", sb)
 
-	_quests_side_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	_quests_side_panel.offset_left = -265.0
-	_quests_side_panel.offset_top = 228.0
-	_quests_side_panel.offset_right = -15.0
-	_quests_side_panel.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	_quests_side_panel.grow_vertical = Control.GROW_DIRECTION_END
-	_quests_side_panel.custom_minimum_size = Vector2(250, 0)
+	_quests_side_panel.custom_minimum_size = Vector2(PANEL_LAYOUT.WIDTH, 110)
 	add_child(_quests_side_panel)
 
 	var vb := VBoxContainer.new()
@@ -225,6 +226,17 @@ func _build_side_quests_card() -> void:
 	_quests_side_label.add_theme_color_override("font_outline_color", Color(0.04, 0.16, 0.26))
 	_quests_side_label.add_theme_constant_override("outline_size", 4)
 	vb.add_child(_quests_side_label)
+
+
+func get_side_quests_rect() -> Rect2:
+	var height := maxf(110.0, _quests_side_panel.get_combined_minimum_size().y)
+	return PANEL_LAYOUT.quests_rect(get_viewport().get_visible_rect(), height)
+
+
+func _layout_side_quests_card() -> void:
+	var rect := get_side_quests_rect()
+	_quests_side_panel.size = rect.size
+	_quests_side_panel.position = rect.position
 
 
 func _make_hud_action_button(text: String, cb: Callable, base_color: Color) -> Button:
@@ -312,7 +324,7 @@ func _build_quests_modal() -> void:
 	vb.add_child(title)
 
 	var sub := Label.new()
-	sub.text = "Topladığın çöpleri sağ üst köşedeki Çöp Konteynerine bırakarak ek coin ve görev ödülleri kazan!"
+	sub.text = "Topladığın çöpleri sağ alt köşedeki Çöp Konteynerine bırakarak ek coin ve görev ödülleri kazan!"
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	sub.add_theme_font_size_override("font_size", 16)

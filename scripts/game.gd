@@ -2,6 +2,7 @@ extends Node2D
 
 const TOTAL_LEVELS := 5
 const MENU_FONT := preload("res://assets/menu_font.ttf")
+const PANEL_LAYOUT := preload("res://scripts/panel_layout.gd")
 
 @export_range(1, 5, 1) var test_start_level: int = 1
 
@@ -20,6 +21,8 @@ var _result_title: Label
 var _result_pol: Label
 var _result_msg: Label
 var _drop_zone: Area2D
+var _panels_body: StaticBody2D
+var _panels_shape: CollisionShape2D
 var _dock_pulse := 0.0
 var _dock_title_label: Label
 var _dock_sub_label: Label
@@ -91,14 +94,14 @@ func _style_top_info() -> void:
 func _build_trash_drop_zone() -> void:
 	_drop_zone = Area2D.new()
 	_drop_zone.name = "TrashDropZone"
-	var screen := get_viewport_rect().size
-	_drop_zone.position = Vector2(screen.x - 135.0, 102.0)
+	_drop_zone.position = PANEL_LAYOUT.dock_rect(get_viewport_rect()).get_center()
 	add_child(_drop_zone)
 
 	var shape := CollisionShape2D.new()
-	var circle := CircleShape2D.new()
-	circle.radius = 78.0
-	shape.shape = circle
+	# Teslim alanı panelin dışına taşar; tekne yanaşınca yükünü bırakabilir.
+	var delivery_shape := RectangleShape2D.new()
+	delivery_shape.size = PANEL_LAYOUT.dock_rect(get_viewport_rect()).size + Vector2(96, 96)
+	shape.shape = delivery_shape
 	_drop_zone.add_child(shape)
 
 	_dock_title_label = Label.new()
@@ -127,13 +130,41 @@ func _build_trash_drop_zone() -> void:
 	_drop_zone.add_child(_dock_sub_label)
 
 	_drop_zone.area_entered.connect(_on_drop_zone_area_entered)
+	_panels_body = StaticBody2D.new()
+	_panels_body.name = "TrashContainerBarrier"
+	_panels_shape = CollisionShape2D.new()
+	_panels_shape.shape = RectangleShape2D.new()
+	_panels_body.add_child(_panels_shape)
+	add_child(_panels_body)
+	_update_panels_barrier()
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
 
 
 func _on_viewport_size_changed() -> void:
 	if _drop_zone:
-		var screen := get_viewport_rect().size
-		_drop_zone.position = Vector2(screen.x - 135.0, 102.0)
+		_drop_zone.position = PANEL_LAYOUT.dock_rect(get_viewport_rect()).get_center()
+	_update_panels_barrier()
+
+
+func get_reserved_panels_rect() -> Rect2:
+	var dock := PANEL_LAYOUT.dock_rect(get_viewport_rect())
+	return dock.merge($HUD.get_side_quests_rect())
+
+
+func _update_panels_barrier() -> void:
+	# Görev kartı ve yazılar geçilebilir; yalnızca görünen konteyner engeldir.
+	var rect := PANEL_LAYOUT.container_body_rect(get_viewport_rect())
+	_panels_body.position = rect.get_center()
+	(_panels_shape.shape as RectangleShape2D).size = rect.size
+
+
+
+
+
+
+
+
+
 
 
 func _on_drop_zone_area_entered(area: Area2D) -> void:
