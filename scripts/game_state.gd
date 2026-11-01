@@ -14,6 +14,8 @@ const SAVE_PATH := "user://mavi_donus_save.json"
 
 const INITIAL_TRASH_POLLUTION := 7.0
 const NEW_TRASH_POLLUTION := 3.5
+const COLLECTION_UPGRADE_COST := 8
+const EMISSION_UPGRADE_COST := 12
 
 const BOAT_CATALOG := {
 	"sub_basic": {
@@ -31,7 +33,7 @@ const BOAT_CATALOG := {
 	},
 	"blue": {
 		"name": "Mavi Temizlik Botu",
-		"cost": 10,
+		"cost": 40,
 		"radius_bonus": 15.0,
 		"delivery_bonus": 1,
 		"desc": "Toplama alanı +15 | Konteyner bonusu +1 coin",
@@ -39,7 +41,7 @@ const BOAT_CATALOG := {
 	},
 	"gulet": {
 		"name": "Ahşap Akdeniz Guleti",
-		"cost": 16,
+		"cost": 65,
 		"radius_bonus": 22.0,
 		"delivery_bonus": 2,
 		"desc": "Toplama alanı +22 | Konteyner bonusu +2 coin",
@@ -47,7 +49,7 @@ const BOAT_CATALOG := {
 	},
 	"emerald": {
 		"name": "Yeşil Eko-Gemi",
-		"cost": 24,
+		"cost": 85,
 		"radius_bonus": 30.0,
 		"delivery_bonus": 2,
 		"desc": "Toplama alanı +30 | Konteyner bonusu +2 coin",
@@ -55,7 +57,7 @@ const BOAT_CATALOG := {
 	},
 	"coast_guard": {
 		"name": "Sahil Güvenlik Botu",
-		"cost": 32,
+		"cost": 130,
 		"radius_bonus": 38.0,
 		"delivery_bonus": 3,
 		"desc": "Toplama alanı +38 | Konteyner bonusu +3 coin",
@@ -63,7 +65,7 @@ const BOAT_CATALOG := {
 	},
 	"sub_fat": {
 		"name": "Mavi Derinlik Denizaltısı",
-		"cost": 42,
+		"cost": 95,
 		"radius_bonus": 46.0,
 		"delivery_bonus": 4,
 		"desc": "Ağır temizlik denizaltısı | +46 Alan, +4 Coin",
@@ -71,7 +73,7 @@ const BOAT_CATALOG := {
 	},
 	"sub_green": {
 		"name": "Yeşil Eko-Denizaltı",
-		"cost": 52,
+		"cost": 140,
 		"radius_bonus": 54.0,
 		"delivery_bonus": 5,
 		"desc": "Elektrikli sessiz denizaltı | +54 Alan, +5 Coin",
@@ -80,7 +82,7 @@ const BOAT_CATALOG := {
 	# Eski kayıtlara tam uyumluluk takma adları:
 	"gold": {
 		"name": "Sahil Güvenlik Botu",
-		"cost": 28,
+		"cost": 130,
 		"radius_bonus": 38.0,
 		"delivery_bonus": 3,
 		"desc": "Toplama alanı +38 | Konteyner bonusu +3 coin",
@@ -88,7 +90,7 @@ const BOAT_CATALOG := {
 	},
 	"royal": {
 		"name": "Mavi Derinlik Denizaltısı",
-		"cost": 40,
+		"cost": 95,
 		"radius_bonus": 46.0,
 		"delivery_bonus": 4,
 		"desc": "Ağır temizlik denizaltısı | +46 Alan, +4 Coin",
@@ -649,13 +651,13 @@ func buy_or_select_boat(boat_id: String, catalog_purchase: bool = false) -> bool
 
 func buy_net(mode: int = -1) -> bool:
 	var underwater := is_underwater_level() if mode < 0 else mode == 1
-	if (has_dive_collector if underwater else has_wide_net) or coins < 8:
+	if (has_dive_collector if underwater else has_wide_net) or coins < COLLECTION_UPGRADE_COST:
 		return false
 	if underwater:
 		has_dive_collector = true
 	else:
 		has_wide_net = true
-	add_coins(-8)
+	add_coins(-COLLECTION_UPGRADE_COST)
 	recalculate_pickup_radius()
 	save_game()
 	return true
@@ -663,13 +665,13 @@ func buy_net(mode: int = -1) -> bool:
 
 func buy_solar(mode: int = -1) -> bool:
 	var underwater := is_underwater_level() if mode < 0 else mode == 1
-	if (has_clean_drive if underwater else has_solar) or coins < 15:
+	if (has_clean_drive if underwater else has_solar) or coins < EMISSION_UPGRADE_COST:
 		return false
 	if underwater:
 		has_clean_drive = true
 	else:
 		has_solar = true
-	add_coins(-15)
+	add_coins(-EMISSION_UPGRADE_COST)
 	update_emission_for_current_round()
 	_update_quests()
 	save_game()

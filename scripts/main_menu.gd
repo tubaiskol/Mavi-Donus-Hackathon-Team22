@@ -482,8 +482,8 @@ func _refresh_menu_shop() -> void:
 			_menu_net_btn.text = "%s (Toplama Alanı +25)  —  Alındı" % equipment
 			_menu_net_btn.disabled = true
 		else:
-			_menu_net_btn.text = "%s (Toplama Alanı +25)  —  8 coin" % equipment
-			_menu_net_btn.disabled = (GameState.coins < 8)
+			_menu_net_btn.text = "%s (Toplama Alanı +25)  —  %d coin" % [equipment, GameState.COLLECTION_UPGRADE_COST]
+			_menu_net_btn.disabled = (GameState.coins < GameState.COLLECTION_UPGRADE_COST)
 
 	if _menu_solar_btn:
 		var equipment := "Emisyonsuz Elektrikli Tahrik" if underwater else "Güneş Paneli"
@@ -491,8 +491,8 @@ func _refresh_menu_shop() -> void:
 			_menu_solar_btn.text = "%s (Emisyon Sıfırlanır)  —  Alındı" % equipment
 			_menu_solar_btn.disabled = true
 		else:
-			_menu_solar_btn.text = "%s (Emisyon Sıfırlanır)  —  15 coin" % equipment
-			_menu_solar_btn.disabled = (GameState.coins < 15)
+			_menu_solar_btn.text = "%s (Emisyon Sıfırlanır)  —  %d coin" % [equipment, GameState.EMISSION_UPGRADE_COST]
+			_menu_solar_btn.disabled = (GameState.coins < GameState.EMISSION_UPGRADE_COST)
 
 	_update_profile_labels()
 

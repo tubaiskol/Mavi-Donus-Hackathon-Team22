@@ -1,7 +1,5 @@
 extends CanvasLayer
 
-const NET_COST := 8
-const SOLAR_COST := 15
 const RED_BOAT_TEX := preload("res://assets/red_boat.png")
 const BLUE_BOAT_TEX := preload("res://assets/blue_boat.png")
 
@@ -363,7 +361,7 @@ func _on_boat_button_pressed(boat_id: String) -> void:
 
 
 func _buy_net() -> void:
-	if GameState.has_collection_upgrade() or GameState.coins < NET_COST:
+	if GameState.has_collection_upgrade() or GameState.coins < GameState.COLLECTION_UPGRADE_COST:
 		return
 
 	if GameState.buy_net():
@@ -373,7 +371,7 @@ func _buy_net() -> void:
 
 
 func _buy_solar() -> void:
-	if GameState.has_clean_propulsion() or GameState.coins < SOLAR_COST:
+	if GameState.has_clean_propulsion() or GameState.coins < GameState.EMISSION_UPGRADE_COST:
 		return
 
 	if GameState.buy_solar():
@@ -425,15 +423,15 @@ func _refresh(value: int) -> void:
 			btn.disabled = value < cost
 
 	var wide_owned := GameState.has_collection_upgrade()
-	net_button.disabled = wide_owned or value < NET_COST
-	solar_button.disabled = GameState.has_clean_propulsion() or value < SOLAR_COST
+	net_button.disabled = wide_owned or value < GameState.COLLECTION_UPGRADE_COST
+	solar_button.disabled = GameState.has_clean_propulsion() or value < GameState.EMISSION_UPGRADE_COST
 
 	if wide_owned:
 		net_button.text = "%s (Toplama Alanı +25)  —  Alındı" % GameState.get_collection_equipment_name()
 	else:
-		net_button.text = "%s (Toplama Alanı +25)  —  %d coin" % [GameState.get_collection_equipment_name(), NET_COST]
+		net_button.text = "%s (Toplama Alanı +25)  —  %d coin" % [GameState.get_collection_equipment_name(), GameState.COLLECTION_UPGRADE_COST]
 
 	if GameState.has_clean_propulsion():
 		solar_button.text = "%s (Emisyon Sıfırlanır)  —  Alındı" % GameState.get_propulsion_equipment_name()
 	else:
-		solar_button.text = "%s (Emisyon Sıfırlanır)  —  %d coin" % [GameState.get_propulsion_equipment_name(), SOLAR_COST]
+		solar_button.text = "%s (Emisyon Sıfırlanır)  —  %d coin" % [GameState.get_propulsion_equipment_name(), GameState.EMISSION_UPGRADE_COST]
