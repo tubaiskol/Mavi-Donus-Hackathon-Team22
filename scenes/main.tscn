@@ -10,7 +10,7 @@
 [ext_resource type="FontFile" uid="uid://d1b76g6rr4t4s" path="res://assets/menu_font.ttf" id="6_tipki"]
 [ext_resource type="Texture2D" uid="uid://dmtmwur2gfymi" path="res://assets/coin_icon.png" id="7_85g3d"]
 [ext_resource type="Script" uid="uid://dq0s4875yyptm" path="res://scripts/pollution_color.gd" id="7_o6xl0"]
-[ext_resource type="Script" path="res://scripts/fish_spawner.gd" id="8_fishsp"]
+[ext_resource type="Script" uid="uid://cjr0qfiu4ggly" path="res://scripts/fish_spawner.gd" id="8_fishsp"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_ypjg4"]
 atlas = ExtResource("7_85g3d")
