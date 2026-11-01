@@ -3,6 +3,7 @@ extends CharacterBody2D
 const ACCELERATION := 900.0
 const FRICTION := 700.0
 const BASE_PICKUP_RADIUS := 40.0
+const SURFACE_CONTACT_HEIGHT := 4.0
 
 # Görsellerin varsayılan baktığı yön. Burada yazmayan araçlar SAĞA bakar.
 # Kırmızı ve yeşil gemi görselleri SOLA bakıyor (başı solda), diğerleri sağa.
@@ -154,14 +155,18 @@ func _physics_process(delta: float) -> void:
 	queue_redraw()
 
 
-
+func get_surface_contact_offset() -> float:
+	var shown := sprite.texture.get_size() * sprite.scale.abs()
+	var bottom := (shown.y * absf(cos(sprite.rotation)) + shown.x * absf(sin(sprite.rotation))) * 0.5
+	return sprite.position.y + bottom - SURFACE_CONTACT_HEIGHT
 
 
 func enforce_water_bounds() -> void:
 	var screen := get_viewport_rect()
 	var min_y := screen.position.y + _edge_margin.y
 	if get_parent().has_water_surface():
-		min_y = maxf(min_y, get_parent().get_water_surface_y() + _hull_shape.size.y * 0.5)
+		# Yalnızca geminin en alt 4 pikseli su çizgisinin altında kalmalı.
+		min_y = maxf(min_y, get_parent().get_water_surface_y() - get_surface_contact_offset())
 	position = position.clamp(Vector2(screen.position.x + _edge_margin.x, min_y), screen.end - _edge_margin)
 	if position.y <= min_y and velocity.y < 0.0:
 		velocity.y = 0.0
