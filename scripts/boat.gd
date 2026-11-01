@@ -107,12 +107,16 @@ func _physics_process(delta: float) -> void:
 
 	enforce_water_bounds()
 
-	# Sol üst HUD paneli altına gemi giremez (görüş kapalı)
-	if position.x < 370.0 and position.y < 162.0:
-		if (370.0 - position.x) < (162.0 - position.y):
-			position.x = 370.0
+	# İstatistik kartı büyüse de teknenin görseli panelin dışında kalır.
+	var stats_rect: Rect2 = get_parent().get_node("HUD").get_stats_panel_rect()
+	stats_rect = stats_rect.grow_individual(_hull_shape.size.x * 0.5, _hull_shape.size.y * 0.5, _hull_shape.size.x * 0.5, _hull_shape.size.y * 0.5)
+	if stats_rect.has_point(position):
+		if (stats_rect.end.x - position.x) < (stats_rect.end.y - position.y):
+			position.x = stats_rect.end.x
+			velocity.x = 0.0
 		else:
-			position.y = 162.0
+			position.y = stats_rect.end.y
+			velocity.y = 0.0
 
 	# Teknenin ters dönmesini engelle:
 	# Sağa/sola giderken görseli yatay çevir (flip_h); asla baş aşağı dönmez.

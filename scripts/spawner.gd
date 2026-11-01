@@ -154,7 +154,7 @@ func _get_random_spawn_position() -> Vector2:
 
 func _is_position_in_forbidden_zone(pos: Vector2, screen: Rect2) -> bool:
 	# 1) Sol üst HUD gösterge paneli (Kirlilik, sayaç ve istatistik kartı)
-	if pos.x < 400.0 and pos.y < 210.0:
+	if get_parent().get_node("HUD").get_stats_panel_rect().grow(32.0).has_point(pos):
 		return true
 	# 2) Sağ alt paneller: görsel boyutu ve yanaşma payı da boş kalır.
 	if get_parent().get_reserved_panels_rect().grow(64.0).has_point(pos):

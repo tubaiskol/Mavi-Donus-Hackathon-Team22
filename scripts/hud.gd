@@ -20,6 +20,7 @@ var _toast_label: Label
 var _toast_tween: Tween
 var _boat_badge_label: Label
 var _container_label: Label
+var _stats_panel: PanelContainer
 
 # Sağ taraftaki bağımsız görev paneli
 var _quests_side_panel: PanelContainer
@@ -70,8 +71,9 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _style_hud() -> void:
-	# Sol üst kart: Sadece temel istatistikler ve Tersane/Duraklat butonları
+	# Tüm istatistikler, içeriğine göre büyüyen tek bir kartta toplanır.
 	var stats_panel := PanelContainer.new()
+	_stats_panel = stats_panel
 	stats_panel.name = "StatsBackdrop"
 	stats_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var card_sb := StyleBoxFlat.new()
@@ -79,14 +81,18 @@ func _style_hud() -> void:
 	card_sb.border_color = Color(0.55, 0.88, 1.0, 0.45)
 	card_sb.set_border_width_all(2)
 	card_sb.set_corner_radius_all(14)
+	card_sb.content_margin_left = 12
+	card_sb.content_margin_right = 12
+	card_sb.content_margin_top = 10
+	card_sb.content_margin_bottom = 10
 	stats_panel.add_theme_stylebox_override("panel", card_sb)
 	stats_panel.position = Vector2(12, 10)
-	stats_panel.size = Vector2(356, 146)
+	stats_panel.custom_minimum_size = Vector2(356, 0)
 	add_child(stats_panel)
 	move_child(stats_panel, 0)
 
-	stats_box.position = Vector2(22, 16)
-	stats_box.custom_minimum_size = Vector2(336, 0)
+	stats_box.reparent(stats_panel, false)
+	stats_box.custom_minimum_size = Vector2(332, 0)
 	stats_box.add_theme_constant_override("separation", 5)
 
 	# Kirlilik çubuğu
@@ -184,7 +190,8 @@ func _style_hud() -> void:
 	_toast_panel.add_child(_toast_label)
 
 
-
+func get_stats_panel_rect() -> Rect2:
+	return Rect2(_stats_panel.position, _stats_panel.size.max(_stats_panel.get_combined_minimum_size()))
 
 
 func _build_side_quests_card() -> void:

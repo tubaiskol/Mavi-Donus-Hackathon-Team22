@@ -83,7 +83,7 @@ func _get_safe_turtle_spawn_position(screen: Rect2) -> Vector2:
 			randf_range(min_y, max_y)
 		)
 		# 1) Sol üst HUD gösterge paneli (Görüş yok)
-		if pos.x < 410.0 and pos.y < 220.0:
+		if get_parent().get_node("HUD").get_stats_panel_rect().grow(44.0).has_point(pos):
 			continue
 		# 2) Panel sınırları ve kurtarma halkası için güvenli mesafe.
 		if get_parent().get_reserved_panels_rect().grow(80.0).has_point(pos):
@@ -100,7 +100,7 @@ func _get_safe_turtle_spawn_position(screen: Rect2) -> Vector2:
 	for y in range(ceili(min_y), int(max_y) + 1, 32):
 		for x in range(int(screen.position.x + EDGE_MARGIN), int(screen.end.x - EDGE_MARGIN) + 1, 32):
 			var pos := Vector2(x, y)
-			if pos.x < 410.0 and pos.y < 220.0:
+			if get_parent().get_node("HUD").get_stats_panel_rect().grow(44.0).has_point(pos):
 				continue
 			if get_parent().get_reserved_panels_rect().grow(80.0).has_point(pos):
 				continue
