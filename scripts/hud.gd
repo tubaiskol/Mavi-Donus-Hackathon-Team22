@@ -442,9 +442,10 @@ func _update_trash_label() -> void:
 	var remaining: int = spawner.get_remaining_trash_count()
 	var collected := clampi(total - remaining, 0, total)
 
-	trash_label.text = "Denizdeki Çöp: %d / %d" % [
+	trash_label.text = "Toplanan Çöp: %d / %d  (Kalan: %d)" % [
 		collected,
-		total
+		total,
+		remaining
 	]
 
 
