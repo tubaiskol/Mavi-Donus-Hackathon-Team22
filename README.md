@@ -223,7 +223,7 @@ Gelecek geliştirmeler için hedefler:
 
 <div align="center">
 
-**Team22 · Mavi Dönüş**
+**Derin Etki Takımı · Mavi Dönüş**
 
 *Temizlik bir tur, dönüşüm bir karar.*
 
