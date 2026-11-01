@@ -21,39 +21,126 @@ const BOAT_CATALOG := {
 		"cost": 0,
 		"radius_bonus": 0.0,
 		"delivery_bonus": 0,
-		"desc": "Standart kıyı temizlik teknesi"
+		"desc": "Standart kıyı temizlik teknesi",
+		"icon_path": "res://assets/vehicles/ship_red.png"
 	},
 	"blue": {
-		"name": "Mavi Temizlik Gemisi",
+		"name": "Mavi Temizlik Botu",
 		"cost": 10,
 		"radius_bonus": 15.0,
 		"delivery_bonus": 1,
-		"desc": "Toplama alanı +15 | Konteyner bonusu +1 coin"
+		"desc": "Toplama alanı +15 | Konteyner bonusu +1 coin",
+		"icon_path": "res://assets/blue_boat.png"
+	},
+	"gulet": {
+		"name": "Ahşap Akdeniz Guleti",
+		"cost": 16,
+		"radius_bonus": 22.0,
+		"delivery_bonus": 2,
+		"desc": "Toplama alanı +22 | Konteyner bonusu +2 coin",
+		"icon_path": "res://assets/story/gulet.png"
 	},
 	"emerald": {
-		"name": "Yeşil Eko-Katamaran",
-		"cost": 18,
-		"radius_bonus": 25.0,
+		"name": "Yeşil Eko-Gemi",
+		"cost": 24,
+		"radius_bonus": 30.0,
 		"delivery_bonus": 2,
-		"desc": "Toplama alanı +25 | Konteyner bonusu +2 coin"
+		"desc": "Toplama alanı +30 | Konteyner bonusu +2 coin",
+		"icon_path": "res://assets/vehicles/ship_green.png"
 	},
-	"gold": {
-		"name": "Altın Sahil Güvenlik",
-		"cost": 28,
-		"radius_bonus": 35.0,
+	"coast_guard": {
+		"name": "Sahil Güvenlik Botu",
+		"cost": 32,
+		"radius_bonus": 38.0,
 		"delivery_bonus": 3,
-		"desc": "Toplama alanı +35 | Konteyner bonusu +3 coin"
+		"desc": "Toplama alanı +38 | Konteyner bonusu +3 coin",
+		"icon_path": "res://assets/story/coast_guard.png"
+	},
+	"sub_fat": {
+		"name": "Mavi Derinlik Denizaltısı",
+		"cost": 42,
+		"radius_bonus": 46.0,
+		"delivery_bonus": 4,
+		"desc": "Ağır temizlik denizaltısı | +46 Alan, +4 Coin",
+		"icon_path": "res://assets/vehicles/sub_fat.png"
+	},
+	"sub_green": {
+		"name": "Yeşil Eko-Denizaltı",
+		"cost": 52,
+		"radius_bonus": 54.0,
+		"delivery_bonus": 5,
+		"desc": "Elektrikli sessiz denizaltı | +54 Alan, +5 Coin",
+		"icon_path": "res://assets/vehicles/sub_green.png"
+	},
+	"drill_robot": {
+		"name": "Derin Deniz Temizlik Robotu",
+		"cost": 65,
+		"radius_bonus": 62.0,
+		"delivery_bonus": 6,
+		"desc": "Büyük okyanus robotu | +62 Alan, +6 Coin",
+		"icon_path": "res://assets/vehicles/drill_robot.png"
+	},
+	# Eski kayıtlara tam uyumluluk takma adları:
+	"gold": {
+		"name": "Sahil Güvenlik Botu",
+		"cost": 28,
+		"radius_bonus": 38.0,
+		"delivery_bonus": 3,
+		"desc": "Toplama alanı +38 | Konteyner bonusu +3 coin",
+		"icon_path": "res://assets/story/coast_guard.png"
 	},
 	"royal": {
-		"name": "Mor Okyanus Gemisi",
+		"name": "Mavi Derinlik Denizaltısı",
 		"cost": 40,
-		"radius_bonus": 48.0,
+		"radius_bonus": 46.0,
 		"delivery_bonus": 4,
-		"desc": "Toplama alanı +48 | Konteyner bonusu +4 coin"
+		"desc": "Ağır temizlik denizaltısı | +46 Alan, +4 Coin",
+		"icon_path": "res://assets/vehicles/sub_fat.png"
 	}
 }
 
-const BOAT_ORDER := ["red", "blue", "emerald", "gold", "royal"]
+const BOAT_ORDER := [
+	"red", "blue", "gulet", "emerald",
+	"coast_guard", "sub_fat", "sub_green", "drill_robot"
+]
+
+const LEVEL_STORIES := {
+	1: {
+		"title": "Kaleiçi Koyu — Sabah Nöbeti",
+		"badge": "🏝️ Kıyı Temizliği",
+		"speaker": "Dalgıç Deniz",
+		"text": "Kaptan, fırtına sonrası kıyı sığlığına tonlarca plastik atık ve cam şişe yığıldı. Kıyı kooperatifi olarak ilk temizliği başlatalım! Çöpleri toplayıp konteynere ulaştır, yüzen balıklara çarpmamaya dikkat et!",
+		"objective": "Kıyıdaki plastik ve cam atıkları topla, konteynere boşalt."
+	},
+	2: {
+		"title": "Resif Sığlığı — Kargo Gemisi Kazası",
+		"badge": "🚢 Gemi Kazası & Sızıntı",
+		"speaker": "Dalgıç Deniz",
+		"text": "Acil durum çağrısı! Açıklarda dev bir konteyner gemisi resife çarptı! Denize ağır araç lastikleri ve kimyasal şişeler saçıldı. Balık sürülerini koruyarak dökülen yükleri topla!",
+		"objective": "Gemi kazasından yayılan lastikleri ve atıkları arındır."
+	},
+	3: {
+		"title": "Korsan Koyu — Hayalet Ağlar & Carettalar",
+		"badge": "🐢 Caretta Kurtarma",
+		"speaker": "Dalgıç Deniz",
+		"text": "Tarihi batığın etrafındaki terk edilmiş hayalet ağlar sevimli Caretta Carettaları hapsetti! Yanlarına yanaşıp ağları çöz, onları özgürlüğüne kavuştur!",
+		"objective": "Ağa takılı Carettaları kurtar, derin suları arındır."
+	},
+	4: {
+		"title": "Derin Kanal — Zehirli Varil Krizi",
+		"badge": "☣️ Toksik Varil Sızıntısı",
+		"speaker": "Dalgıç Deniz",
+		"text": "Alarm! Denizaltı rotasındaki derin kanala kaçak zehirli atık varilleri ve petrol balçığı sızmış! Kirlilik tehlikeli boyutta, teknene güneş paneli takmayı unutma!",
+		"objective": "Zehirli varilleri ve petrol balçıklarını topla, emisyonu sıfırla."
+	},
+	5: {
+		"title": "Mavi Dönüş — Büyük Akdeniz Zaferi",
+		"badge": "🌊 Nihai Okyanus Dönüşümü",
+		"speaker": "Dalgıç Deniz",
+		"text": "Büyük Mavi Dönüş günündeyiz! Tüm filomuz devrede. Körfezi son kirlilik noktasına kadar arındırıp Akdeniz'e mavi geleceğini hediye edelim!",
+		"objective": "Son atıkları temizle, Akdeniz'i mavi geleceğine kavuştur!"
+	}
+}
 
 # --- KALICI VERİLER (Save / Load ile saklanır) ---
 var coins := 0

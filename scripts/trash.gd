@@ -73,11 +73,25 @@ func _apply_random_texture() -> void:
 		return
 
 	var chosen_texture: Texture2D = null
+	var path_filter: String = ""
 
-	# Seviye 3 ve sonrasında denizde daha fazla toksik atık belirir.
-	if GameState.current_round >= 3 and randf() < 0.35:
+	# Seviyeye göre hikayesel çöp dağılımı:
+	match GameState.current_round:
+		2:
+			# Kargo gemisi kazası: Lastik, kimyasal şişeler ve variller
+			if randf() < 0.65:
+				path_filter = ["tire", "barrel", "red_bottle", "slime"].pick_random()
+		4:
+			# Zehirli varil krizi: Ağır toksik atıklar
+			if randf() < 0.70:
+				path_filter = ["barrel", "toxic", "slime"].pick_random()
+		_:
+			if GameState.current_round >= 3 and randf() < 0.35:
+				path_filter = "toxic"
+
+	if not path_filter.is_empty():
 		for tex in trash_textures:
-			if "toxic" in tex.resource_path.to_lower():
+			if path_filter in tex.resource_path.to_lower():
 				chosen_texture = tex
 				break
 
@@ -90,8 +104,20 @@ func _apply_random_texture() -> void:
 	trash_sprite.texture = chosen_texture
 
 	var path := chosen_texture.resource_path.to_lower()
-	if "toxic" in path:
-		trash_name = "Toksik Atık"
+	if "barrel" in path:
+		trash_name = "Toksik Atık Varili"
+		coin_reward = 3
+		pollution_reduction = 7.0
+	elif "slime" in path:
+		trash_name = "Kimyasal Balçık"
+		coin_reward = 3
+		pollution_reduction = 6.0
+	elif "tire" in path:
+		trash_name = "Atık Lastik"
+		coin_reward = 2
+		pollution_reduction = 5.0
+	elif "toxic" in path:
+		trash_name = "Radyoaktif Atık"
 		coin_reward = 3
 		pollution_reduction = 7.0
 	elif "black_bag" in path or "bag" in path:
@@ -102,7 +128,7 @@ func _apply_random_texture() -> void:
 		trash_name = "Kimyasal Şişe"
 		coin_reward = 2
 		pollution_reduction = 4.0
-	elif "green_bottle" in path:
+	elif "glass" in path or "green_bottle" in path:
 		trash_name = "Cam Şişe"
 		coin_reward = 1
 		pollution_reduction = 3.5
@@ -111,10 +137,10 @@ func _apply_random_texture() -> void:
 		coin_reward = 1
 		pollution_reduction = 3.5
 
-	# Farklı çözünürlüklerdeki görselleri ortak boyuta getir.
+	# Farklı çözünürlüklerdeki görselleri ortak boyuta getir (~40-45px)
 	var image_size := chosen_texture.get_size()
 	var longest_side := maxf(image_size.x, image_size.y)
-
-	trash_sprite.scale = Vector2.ONE * (
-		1200.0 / maxf(longest_side, 1.0)
-	)
+	if longest_side > 400.0:
+		trash_sprite.scale = Vector2.ONE * (1200.0 / longest_side)
+	else:
+		trash_sprite.scale = Vector2.ONE * (44.0 / maxf(longest_side, 1.0))

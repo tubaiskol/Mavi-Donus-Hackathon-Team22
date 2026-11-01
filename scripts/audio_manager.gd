@@ -72,6 +72,8 @@ func _load_sounds() -> void:
 		"pollution_warning": "sfx_pollution_warning.wav",
 		"boat_engine_diesel": "sfx_boat_engine_diesel.wav",
 		"boat_engine_solar": "sfx_boat_engine_solar.wav",
+		"fish_hit": "sfx_fish_hit.wav",
+		"win": "sfx_win.wav",
 		"ambient_ocean": "ambient_ocean_loop.wav"
 	}
 
@@ -154,6 +156,9 @@ func play_buy() -> void:
 
 func play_solar() -> void:
 	play("solar_activate", 0.0, 2.0)
+
+func play_fish_hit() -> void:
+	play("fish_hit", 0.08, 1.0)
 
 func play_button() -> void:
 	play("button_click", 0.05, -1.0)

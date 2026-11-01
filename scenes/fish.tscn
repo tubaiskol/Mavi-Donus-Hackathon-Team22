@@ -1,0 +1,16 @@
+[gd_scene format=3 uid="uid://b6p5v8f2a1c0d"]
+
+[ext_resource type="Script" path="res://scripts/fish.gd" id="1_fish"]
+[ext_resource type="Texture2D" path="res://assets/fish/fish_blue.png" id="2_ftex"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_fish"]
+radius = 18.0
+
+[node name="Fish" type="Area2D" groups=["fish"]]
+script = ExtResource("1_fish")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_ftex")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_fish")

@@ -2,7 +2,14 @@ extends CanvasModulate
 
 const CLEAN_COLOR := Color.WHITE
 const DIRTY_COLOR := Color(0.58, 0.53, 0.34)
-const SEA_BG_TEX := preload("res://assets/general-game-background.jpeg")
+
+const LEVEL_BACKGROUNDS := {
+	1: preload("res://assets/backgrounds/bg1/full.png"),
+	2: preload("res://assets/backgrounds/bg4/full.png"),
+	3: preload("res://assets/backgrounds/bg3/full.png"),
+	4: preload("res://assets/backgrounds/bg2/full.png"),
+	5: preload("res://assets/general-game-background.jpeg")
+}
 
 var target_color := CLEAN_COLOR
 var _bg_tex_rect: TextureRect
@@ -14,19 +21,19 @@ func _ready() -> void:
 	# Mağaza açıldığında da renk geçişi tamamlanabilsin.
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
-	background.color = Color("#4db6d6")
+	background.color = Color("#246b85")
 	background.z_index = -10
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	if SEA_BG_TEX and background.get_node_or_null("SeaTexture") == null:
+	if background.get_node_or_null("SeaTexture") == null:
 		_bg_tex_rect = TextureRect.new()
 		_bg_tex_rect.name = "SeaTexture"
-		_bg_tex_rect.texture = SEA_BG_TEX
+		_bg_tex_rect.texture = _get_bg_texture_for_round(GameState.current_round)
 		_bg_tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		_bg_tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 		_bg_tex_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		_bg_tex_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_bg_tex_rect.modulate = Color(1.0, 1.0, 1.0, 0.88)
+		_bg_tex_rect.modulate = Color(1.0, 1.0, 1.0, 0.92)
 		background.add_child(_bg_tex_rect)
 
 	_resize_background()
@@ -35,6 +42,15 @@ func _ready() -> void:
 	GameState.pollution_changed.connect(_on_pollution_changed)
 	_on_pollution_changed(GameState.pollution)
 	color = target_color
+
+
+func update_round_background(round_num: int) -> void:
+	if _bg_tex_rect:
+		_bg_tex_rect.texture = _get_bg_texture_for_round(round_num)
+
+
+func _get_bg_texture_for_round(round_num: int) -> Texture2D:
+	return LEVEL_BACKGROUNDS.get(round_num, LEVEL_BACKGROUNDS[1])
 
 
 func _process(delta: float) -> void:

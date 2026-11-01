@@ -5,10 +5,21 @@ const FRICTION := 700.0
 const EDGE_MARGIN := Vector2(24, 24)
 const BASE_PICKUP_RADIUS := 40.0
 
-const RED_BOAT_TEX := preload("res://assets/red_boat.png")
-const BLUE_BOAT_TEX := preload("res://assets/blue_boat.png")
+const BOAT_TEXTURES := {
+	"red": preload("res://assets/vehicles/ship_red.png"),
+	"blue": preload("res://assets/blue_boat.png"),
+	"gulet": preload("res://assets/story/gulet.png"),
+	"emerald": preload("res://assets/vehicles/ship_green.png"),
+	"coast_guard": preload("res://assets/story/coast_guard.png"),
+	"sub_fat": preload("res://assets/vehicles/sub_fat.png"),
+	"sub_green": preload("res://assets/vehicles/sub_green.png"),
+	"drill_robot": preload("res://assets/vehicles/drill_robot.png"),
+	"gold": preload("res://assets/story/coast_guard.png"),
+	"royal": preload("res://assets/vehicles/sub_fat.png")
+}
 
 var pickup_circle := CircleShape2D.new()
+var _hit_flash_timer := 0.0
 
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var pickup_area: Area2D = $PickupArea
@@ -29,30 +40,26 @@ func _on_boat_changed(boat_id: String) -> void:
 
 
 func _apply_boat_texture(boat_id: String) -> void:
-	match boat_id:
-		"blue":
-			sprite.texture = BLUE_BOAT_TEX
-			sprite.scale = Vector2(1.12, 1.12)
-			sprite.self_modulate = Color.WHITE
-		"emerald":
-			sprite.texture = BLUE_BOAT_TEX
-			sprite.scale = Vector2(1.16, 1.16)
-			sprite.self_modulate = Color(0.55, 1.0, 0.72)
-		"gold":
-			sprite.texture = RED_BOAT_TEX
-			sprite.scale = Vector2(1.08, 1.08)
-			sprite.self_modulate = Color(1.0, 0.88, 0.38)
-		"royal":
-			sprite.texture = BLUE_BOAT_TEX
-			sprite.scale = Vector2(1.22, 1.22)
-			sprite.self_modulate = Color(0.86, 0.68, 1.0)
-		_:
-			sprite.texture = RED_BOAT_TEX
-			sprite.scale = Vector2.ONE
-			sprite.self_modulate = Color.WHITE
+	var tex: Texture2D = BOAT_TEXTURES.get(boat_id, BOAT_TEXTURES["red"])
+	sprite.texture = tex
+	var longest := maxf(tex.get_width(), tex.get_height())
+	var target_len := 125.0
+	if boat_id in ["gulet", "coast_guard"]:
+		target_len = 140.0
+	elif boat_id in ["sub_fat", "drill_robot"]:
+		target_len = 130.0
+	elif boat_id == "blue":
+		target_len = 220.0 # Orijinal blue_boat geniş şeffaf kenarlığa sahip
+	var s := target_len / maxf(longest, 1.0)
+	sprite.scale = Vector2(s, s)
+	sprite.self_modulate = Color.WHITE
 
 	_update_pickup_shape()
 	queue_redraw()
+
+
+func trigger_fish_hit_feedback() -> void:
+	_hit_flash_timer = 0.8
 
 
 func _physics_process(delta: float) -> void:
@@ -101,6 +108,13 @@ func _physics_process(delta: float) -> void:
 		target_tilt = clampf(velocity.y / GameState.boat_speed, -1.0, 1.0) * 0.10
 
 	sprite.rotation = lerp_angle(sprite.rotation, target_tilt, 8.0 * delta)
+
+	if _hit_flash_timer > 0.0:
+		_hit_flash_timer -= delta
+		var flash_phase := sin(_hit_flash_timer * 28.0)
+		sprite.self_modulate = Color(1.0, 0.35, 0.35) if flash_phase > 0.0 else Color.WHITE
+	else:
+		sprite.self_modulate = Color.WHITE
 
 	var is_moving := velocity.length() > 20.0
 

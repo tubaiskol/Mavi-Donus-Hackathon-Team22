@@ -134,27 +134,18 @@ func _build_modern_shop_ui() -> void:
 
 	legacy_boat_button.hide()
 
-	var red_icon := _make_boat_icon(RED_BOAT_TEX, Rect2i(360, 215, 250, 140), Color.WHITE)
-	var blue_icon := _make_boat_icon(BLUE_BOAT_TEX, Rect2i(190, 260, 230, 140), Color.WHITE)
-	var emerald_icon := _make_boat_icon(BLUE_BOAT_TEX, Rect2i(190, 260, 230, 140), Color(0.55, 1.0, 0.72))
-	var gold_icon := _make_boat_icon(RED_BOAT_TEX, Rect2i(360, 215, 250, 140), Color(1.0, 0.88, 0.38))
-	var royal_icon := _make_boat_icon(BLUE_BOAT_TEX, Rect2i(190, 260, 230, 140), Color(0.86, 0.68, 1.0))
-
-	var icons := {
-		"red": red_icon,
-		"blue": blue_icon,
-		"emerald": emerald_icon,
-		"gold": gold_icon,
-		"royal": royal_icon
-	}
-
 	for boat_id in GameState.BOAT_ORDER:
+		var info: Dictionary = GameState.BOAT_CATALOG[boat_id]
+		var icon_res: Texture2D = null
+		if info.has("icon_path") and ResourceLoader.exists(info["icon_path"]):
+			icon_res = _make_vehicle_thumbnail(load(info["icon_path"]))
+
 		var b := Button.new()
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.icon = icons.get(boat_id)
+		b.icon = icon_res
 		b.expand_icon = false
 		_style_shop_button(b, false)
-		b.custom_minimum_size = Vector2(330, 50)
+		b.custom_minimum_size = Vector2(330, 48)
 		b.add_theme_font_size_override("font_size", 14)
 		b.pressed.connect(_on_boat_button_pressed.bind(boat_id))
 		_boats_grid.add_child(b)
@@ -228,7 +219,7 @@ func _switch_tab(idx: int) -> void:
 		_tab_equip_btn.add_theme_color_override("font_color", Color.WHITE)
 
 
-func _make_boat_icon(tex: Texture2D, region: Rect2i, tint: Color) -> Texture2D:
+func _make_vehicle_thumbnail(tex: Texture2D) -> Texture2D:
 	if tex == null:
 		return null
 	var img := tex.get_image()
@@ -236,15 +227,9 @@ func _make_boat_icon(tex: Texture2D, region: Rect2i, tint: Color) -> Texture2D:
 		return null
 	if img.is_compressed():
 		img.decompress()
-	var cropped := img.get_region(region)
-	cropped.resize(54, 34, Image.INTERPOLATE_LANCZOS)
-	if tint != Color.WHITE:
-		for y in cropped.get_height():
-			for x in cropped.get_width():
-				var c := cropped.get_pixel(x, y)
-				if c.a > 0.01:
-					cropped.set_pixel(x, y, Color(c.r * tint.r, c.g * tint.g, c.b * tint.b, c.a))
-	return ImageTexture.create_from_image(cropped)
+	var copy := img.duplicate()
+	copy.resize(54, 34, Image.INTERPOLATE_LANCZOS)
+	return ImageTexture.create_from_image(copy)
 
 
 func _style_shop_button(b: Button, is_primary: bool) -> void:

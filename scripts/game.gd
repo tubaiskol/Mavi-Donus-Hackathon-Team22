@@ -27,12 +27,19 @@ var _pause_modal: CanvasLayer
 var _delivery_guidance_timer := 0.0
 var _turtle_guidance_timer := 0.0
 
+var _story_layer: CanvasLayer
+var _story_badge: Label
+var _story_title: Label
+var _story_text: Label
+var _story_objective: Label
+
 
 func _ready() -> void:
 	_style_top_info()
 	_build_trash_drop_zone()
 	_build_result_screen()
 	_build_pause_modal()
+	_build_story_dialog()
 
 	get_tree().paused = false
 
@@ -54,15 +61,12 @@ func _ready() -> void:
 	time_left = GameState.round_time
 	_update_time_label()
 	_update_dock_labels()
-	GameState.running = true
 
-	GameState.show_toast(
-		"Seviye %d Başladı (Kirlilik: %%%d). Çöpleri topla ve Konteynere dök!" % [
-			GameState.current_round,
-			roundi(GameState.pollution)
-		],
-		4.0
-	)
+	var canvas_mod = get_node_or_null("CanvasModulate")
+	if canvas_mod and canvas_mod.has_method("update_round_background"):
+		canvas_mod.update_round_background(GameState.current_round)
+
+	_show_story_briefing(GameState.current_round)
 
 
 func _style_top_info() -> void:
@@ -284,16 +288,18 @@ func _start_next_level() -> void:
 	GameState.start_next_level()
 	spawner.start_level()
 
+	var canvas_mod = get_node_or_null("CanvasModulate")
+	if canvas_mod and canvas_mod.has_method("update_round_background"):
+		canvas_mod.update_round_background(GameState.current_round)
+
+	var fish_spawner = get_node_or_null("FishSpawner")
+	if fish_spawner and fish_spawner.has_method("clean_level_fish"):
+		fish_spawner.clean_level_fish()
+
 	time_left = GameState.round_time
 	_update_time_label()
 
-	GameState.running = true
-	get_tree().paused = false
-
-	if GameState.has_solar:
-		GameState.show_toast("Güneş paneli aktif! Emisyon sıfır.", 3.0)
-	else:
-		GameState.show_toast("%s ile %d. seviyeye başladın!" % [GameState.get_boat_name(), GameState.current_round], 3.0)
+	_show_story_briefing(GameState.current_round)
 
 
 func _update_time_label() -> void:
@@ -397,6 +403,12 @@ func _build_pause_modal() -> void:
 
 	var resume_btn := _make_result_button("▶️ Devam Et", toggle_pause, true)
 	vb.add_child(resume_btn)
+
+	var story_btn := _make_result_button("📜 Bölüm Hikayesi & Brifing", func():
+		toggle_pause()
+		_show_story_briefing(GameState.current_round)
+	, false)
+	vb.add_child(story_btn)
 
 	var restart_btn := _make_result_button("🔄 Seviyeyi Yeniden Başlat", _restart_current_level, false)
 	vb.add_child(restart_btn)
@@ -543,3 +555,141 @@ func _return_to_menu() -> void:
 	get_tree().paused = false
 	GameState.save_game()
 	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+
+
+# --- BÖLÜM HİKAYESİ VE GÖREV BRİFİNGİ ---
+
+func _build_story_dialog() -> void:
+	_story_layer = CanvasLayer.new()
+	_story_layer.name = "StoryBriefingLayer"
+	_story_layer.layer = 12
+	_story_layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	_story_layer.visible = false
+	add_child(_story_layer)
+
+	var dim := ColorRect.new()
+	dim.color = Color(0.02, 0.08, 0.16, 0.75)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_story_layer.add_child(dim)
+
+	var cc := CenterContainer.new()
+	cc.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	if MENU_FONT:
+		var th := Theme.new()
+		th.default_font = MENU_FONT
+		th.default_font_size = 20
+		cc.theme = th
+	_story_layer.add_child(cc)
+
+	var pc := PanelContainer.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.96, 0.99, 1.0, 0.97)
+	sb.border_color = Color(0.16, 0.58, 0.78, 0.92)
+	sb.set_border_width_all(3)
+	sb.set_corner_radius_all(20)
+	sb.set_content_margin_all(26)
+	sb.shadow_color = Color(0.0, 0.08, 0.16, 0.45)
+	sb.shadow_size = 22
+	pc.add_theme_stylebox_override("panel", sb)
+	cc.add_child(pc)
+
+	var vb := VBoxContainer.new()
+	vb.custom_minimum_size = Vector2(620, 0)
+	vb.add_theme_constant_override("separation", 14)
+	pc.add_child(vb)
+
+	# Üst Bilgi Kartı (Dalgıç Avatarı + Başlıklar)
+	var header_hbox := HBoxContainer.new()
+	header_hbox.add_theme_constant_override("separation", 16)
+	vb.add_child(header_hbox)
+
+	var avatar_rect := TextureRect.new()
+	avatar_rect.name = "DiverAvatar"
+	avatar_rect.texture = preload("res://assets/story/diver.png")
+	avatar_rect.custom_minimum_size = Vector2(110, 56)
+	avatar_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	avatar_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	header_hbox.add_child(avatar_rect)
+
+	var titles_vbox := VBoxContainer.new()
+	titles_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	titles_vbox.add_theme_constant_override("separation", 3)
+	header_hbox.add_child(titles_vbox)
+
+	_story_badge = Label.new()
+	_story_badge.add_theme_font_size_override("font_size", 14)
+	_story_badge.add_theme_color_override("font_color", Color(0.10, 0.52, 0.68))
+	titles_vbox.add_child(_story_badge)
+
+	_story_title = Label.new()
+	_story_title.add_theme_font_size_override("font_size", 24)
+	_story_title.add_theme_color_override("font_color", Color(0.06, 0.22, 0.34))
+	titles_vbox.add_child(_story_title)
+
+	var speaker_lbl := Label.new()
+	speaker_lbl.text = "📻 Dalgıç Deniz (Telsiz Görev Brifingi)"
+	speaker_lbl.add_theme_font_size_override("font_size", 13)
+	speaker_lbl.add_theme_color_override("font_color", Color(0.72, 0.46, 0.08))
+	titles_vbox.add_child(speaker_lbl)
+
+	# Hikaye Metni
+	_story_text = Label.new()
+	_story_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_story_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_story_text.add_theme_font_size_override("font_size", 17)
+	_story_text.add_theme_color_override("font_color", Color(0.14, 0.28, 0.40))
+	vb.add_child(_story_text)
+
+	# Görev Kutusu
+	var obj_panel := PanelContainer.new()
+	var osb := StyleBoxFlat.new()
+	osb.bg_color = Color(0.88, 0.95, 0.98, 0.9)
+	osb.border_color = Color(0.35, 0.70, 0.85, 0.8)
+	osb.set_border_width_all(2)
+	osb.set_corner_radius_all(10)
+	osb.set_content_margin_all(10)
+	obj_panel.add_theme_stylebox_override("panel", osb)
+	vb.add_child(obj_panel)
+
+	_story_objective = Label.new()
+	_story_objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_story_objective.add_theme_font_size_override("font_size", 15)
+	_story_objective.add_theme_color_override("font_color", Color(0.08, 0.38, 0.32))
+	obj_panel.add_child(_story_objective)
+
+	var start_btn := _make_result_button("▶️ Göreve Başla", _close_story_dialog, true)
+	vb.add_child(start_btn)
+
+
+func _show_story_briefing(round_num: int) -> void:
+	if _story_layer == null:
+		return
+
+	var story_info: Dictionary = GameState.LEVEL_STORIES.get(round_num, {})
+	if story_info.is_empty():
+		GameState.running = true
+		get_tree().paused = false
+		return
+
+	_story_badge.text = story_info.get("badge", "Mavi Dönüş Görevi")
+	_story_title.text = "%d. BÖLÜM: %s" % [round_num, story_info.get("title", "Görev")]
+	_story_text.text = story_info.get("text", "")
+	_story_objective.text = "🎯 GÖREV HEDEFİ: %s" % story_info.get("objective", "Denizi temizle.")
+
+	GameState.running = false
+	get_tree().paused = true
+	_story_layer.show()
+
+
+func _close_story_dialog() -> void:
+	if AudioManager:
+		AudioManager.play_button()
+
+	_story_layer.hide()
+	get_tree().paused = false
+	GameState.running = true
+
+	GameState.show_toast(
+		"%d. Seviye Görevi Başladı! Çöpleri topla ve Konteynere ulaştır!" % GameState.current_round,
+		3.5
+	)

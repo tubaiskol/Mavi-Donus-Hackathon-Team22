@@ -282,21 +282,23 @@ func _refresh_level_select_ui() -> void:
 
 	for lvl in range(1, 6):
 		var b := Button.new()
-		b.custom_minimum_size = Vector2(90, 70)
-		b.add_theme_font_size_override("font_size", 16)
+		b.custom_minimum_size = Vector2(120, 75)
+		b.add_theme_font_size_override("font_size", 14)
 
 		var is_unlocked := (lvl <= GameState.unlocked_level)
 		var hist = GameState.level_history.get(str(lvl), {})
 		var is_passed := bool(hist.get("passed", false))
+		var story_info: Dictionary = GameState.LEVEL_STORIES.get(lvl, {})
+		var short_title: String = story_info.get("badge", "Seviye %d" % lvl)
 
 		if is_passed:
-			b.text = "Seviye %d\n✅ Geçildi" % lvl
+			b.text = "%s\n✅ Geçildi" % short_title
 			b.disabled = false
 		elif is_unlocked:
-			b.text = "Seviye %d\n🔓 Açık" % lvl
+			b.text = "%s\n🔓 Oyna" % short_title
 			b.disabled = false
 		else:
-			b.text = "Seviye %d\n🔒 Kilitli" % lvl
+			b.text = "%s\n🔒 Kilitli" % short_title
 			b.disabled = true
 
 		b.pressed.connect(func():
@@ -373,26 +375,17 @@ func _build_interactive_menu_shop(ui_theme: Theme) -> void:
 	grid.add_theme_constant_override("v_separation", 8)
 	_menu_shipyard_box.add_child(grid)
 
-	var red_icon := _make_boat_icon(RED_BOAT_TEX, Rect2i(360, 215, 250, 140), Color.WHITE)
-	var blue_icon := _make_boat_icon(BLUE_BOAT_TEX, Rect2i(190, 260, 230, 140), Color.WHITE)
-	var emerald_icon := _make_boat_icon(BLUE_BOAT_TEX, Rect2i(190, 260, 230, 140), Color(0.55, 1.0, 0.72))
-	var gold_icon := _make_boat_icon(RED_BOAT_TEX, Rect2i(360, 215, 250, 140), Color(1.0, 0.88, 0.38))
-	var royal_icon := _make_boat_icon(BLUE_BOAT_TEX, Rect2i(190, 260, 230, 140), Color(0.86, 0.68, 1.0))
-
-	var icons := {
-		"red": red_icon,
-		"blue": blue_icon,
-		"emerald": emerald_icon,
-		"gold": gold_icon,
-		"royal": royal_icon
-	}
-
 	for boat_id in GameState.BOAT_ORDER:
+		var info: Dictionary = GameState.BOAT_CATALOG[boat_id]
+		var icon_res: Texture2D = null
+		if info.has("icon_path") and ResourceLoader.exists(info["icon_path"]):
+			icon_res = _make_vehicle_thumbnail(load(info["icon_path"]))
+
 		var b := Button.new()
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.icon = icons.get(boat_id)
+		b.icon = icon_res
 		b.expand_icon = false
-		b.custom_minimum_size = Vector2(330, 50)
+		b.custom_minimum_size = Vector2(330, 48)
 		b.add_theme_font_size_override("font_size", 14)
 		b.pressed.connect(_on_menu_boat_buy_pressed.bind(boat_id))
 		grid.add_child(b)
@@ -498,7 +491,7 @@ func _refresh_menu_shop() -> void:
 	_update_profile_labels()
 
 
-func _make_boat_icon(tex: Texture2D, region: Rect2i, tint: Color) -> Texture2D:
+func _make_vehicle_thumbnail(tex: Texture2D) -> Texture2D:
 	if tex == null:
 		return null
 	var img := tex.get_image()
@@ -506,15 +499,9 @@ func _make_boat_icon(tex: Texture2D, region: Rect2i, tint: Color) -> Texture2D:
 		return null
 	if img.is_compressed():
 		img.decompress()
-	var cropped := img.get_region(region)
-	cropped.resize(54, 34, Image.INTERPOLATE_LANCZOS)
-	if tint != Color.WHITE:
-		for y in cropped.get_height():
-			for x in cropped.get_width():
-				var c := cropped.get_pixel(x, y)
-				if c.a > 0.01:
-					cropped.set_pixel(x, y, Color(c.r * tint.r, c.g * tint.g, c.b * tint.b, c.a))
-	return ImageTexture.create_from_image(cropped)
+	var copy := img.duplicate()
+	copy.resize(54, 34, Image.INTERPOLATE_LANCZOS)
+	return ImageTexture.create_from_image(copy)
 
 
 # --- AYARLAR MODALI ---
